@@ -1,9 +1,17 @@
 language: go
 
 go:
-  - 1.8.x
-  - master
+- 1.11.x
+- master
 
-install:
-  - go get -v github.com/Masterminds/glide 
-  - make get-deps
+env:
+- GO111MODULE=on
+
+before_install:
+- go get -v
+
+script:
+- go test ./... -count=1 -coverprofile=coverage.txt -covermode=atomic -v
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)

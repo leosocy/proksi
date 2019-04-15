@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -33,13 +32,19 @@ var fetchers []fetcher
 
 func init() {
 	request = gorequest.New()
-	fetchers = append(fetchers,
-		&ipAPIFetcher{baseFetcher{tagName: "ip-api-json", baseURL: "http://ip-api.com"}})
+	fetcherNames := []string{
+		ipAPIFetcherName,
+	}
+	for _, name := range fetcherNames {
+		if f, err := newFetcher(name); err == nil {
+			fetchers = append(fetchers, f)
+		}
+	}
 }
 
 // NewGeoInfo returns the geo information for ip.
 // It will get a fetcher from the `fetchers`,
-// make a request, and parse it
+// make a fetching request, and parse response body,
 // until the parse succeeds or the loop ends
 func NewGeoInfo(ip string) (info *GeoInfo, err error) {
 	for _, f := range fetchers {
@@ -50,7 +55,7 @@ func NewGeoInfo(ip string) (info *GeoInfo, err error) {
 			}
 		}
 	}
-	return
+	return info, fmt.Errorf("can't create a new geo info")
 }
 
 type fetcher interface {
@@ -59,12 +64,27 @@ type fetcher interface {
 	unmarshal(body []byte) (info *GeoInfo, err error)
 }
 
+const (
+	ipAPIFetcherName string = "ip-api"
+)
+
+func newFetcher(name string) (f fetcher, err error) {
+	switch name {
+	case ipAPIFetcherName:
+		f = &ipAPIFetcher{
+			baseFetcher{tagName: "ip-api-json", baseURL: "http://ip-api.com"},
+		}
+	default:
+		return f, fmt.Errorf("geo info fetcher name not support")
+	}
+	f.init()
+	return
+}
+
 type baseFetcher struct {
 	tagName      string
 	baseURL      string
 	urlFormatter string
-
-	sync.Once
 }
 
 func (f *baseFetcher) unmarshal(body []byte) (info *GeoInfo, err error) {
@@ -110,7 +130,6 @@ func (f *ipAPIFetcher) init() {
 }
 
 func (f *ipAPIFetcher) fetch(ip string) (body []byte, err error) {
-	f.Once.Do(f.init)
 	url := fmt.Sprintf(f.urlFormatter, ip)
 	resp, body, errs := request.Get(url).EndBytes()
 	if resp.StatusCode != http.StatusOK || errs != nil {

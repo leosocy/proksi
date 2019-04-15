@@ -1,5 +1,8 @@
 # GIPP: Go IP Proxy Pool
 
+[![Build Status](https://travis-ci.org/Leosocy/gipp.svg?branch=master)](https://travis-ci.org/Leosocy/gipp)
+[![codecov](https://codecov.io/gh/Leosocy/gipp/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/gipp)
+
 通过RESTful API，给其他爬虫程序提供**稳定**、**高效**的IP代理。
 
 通过go的高并发，定期爬取大量免费的代理资源，进行质量筛选，并存储到Storage中。
