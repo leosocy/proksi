@@ -14,27 +14,23 @@ help:
 	@echo 'Management commands for gipp:'
 	@echo
 	@echo 'Usage:'
-	@echo '    make build           Compile the project.'
 	@echo '    make fmt             Fomat source cide.'
-	@echo '    make get-deps        runs dep ensure, mostly used for ci.'
+	@echo '    make test            Run tests on a compiled project.'
+	@echo '    make build           Compile the project.'
 	@echo '    make build-alpine    Compile optimized for alpine linux.'
 	@echo '    make package         Build final docker image with just the go binary inside'
 	@echo '    make tag             Tag image created by package with latest, git commit and version'
-	@echo '    make test            Run tests on a compiled project.'
 	@echo '    make push            Push tagged images to registry'
 	@echo '    make clean           Clean the directory tree.'
 	@echo
+
+fmt:
+	go fmt ./...
 
 build:
 	@echo "building ${BIN_NAME} ${VERSION}"
 	@echo "GOPATH=${GOPATH}"
 	go build -ldflags "-X github.com/Leosocy/gipp/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/Leosocy/gipp/version.BuildDate=${BUILD_DATE}" -o bin/${BIN_NAME}
-
-fmt:
-	go fmt ./...
-
-get-deps:
-	dep ensure
 
 build-alpine:
 	@echo "building ${BIN_NAME} ${VERSION}"
@@ -61,5 +57,5 @@ clean:
 	@test ! -e bin/${BIN_NAME} || rm bin/${BIN_NAME}
 
 test:
-	go test ./...
+	go test ./... -count=1 -v
 

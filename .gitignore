@@ -26,6 +26,7 @@ _deps
 *.dll
 *.so
 *.dylib
+cov*
 
 # Test binary, built with `go test -c`
 *.test
