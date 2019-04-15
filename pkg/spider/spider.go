@@ -4,9 +4,18 @@
 
 package spider
 
-import "github.com/Leosocy/gipp/pkg/proxy"
+import (
+	"github.com/Leosocy/gipp/pkg/proxy"
+)
 
 // Spider interface of all spiders.
 type Spider interface {
 	Crawl(chan<- *proxy.Proxy)
+}
+
+// BaseSpider include members required by all spiders.
+type BaseSpider struct {
+	Name    string
+	UrlsFmt []string
+	// logrus.Logger
 }
