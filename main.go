@@ -2,18 +2,22 @@ package main
 
 import (
 	"fmt"
+	"time"
 
-	ua "github.com/EDDYCJY/fake-useragent"
-	"github.com/Leosocy/gipp/pkg/proxy"
-	"github.com/Leosocy/gipp/pkg/spider"
+	browser "github.com/EDDYCJY/fake-useragent"
 )
 
 func main() {
-
-	proxies := make(chan *proxy.Proxy)
-	urls := []string{"https://www.xicidaili.com/nt/"}
-	s := spider.XiciSpider{BaseSpider: spider.BaseSpider{Name: "xici", UrlsFmt: urls}}
-	s.Crawl(proxies)
-	ua := ua.Random()
-	fmt.Print(ua)
+	for {
+		client := browser.Client{
+			MaxPage: 5,
+			Delay:   100 * time.Millisecond,
+			Timeout: 5 * time.Second,
+		}
+		cache := browser.Cache{}
+		b := browser.NewBrowser(client, cache)
+		fmt.Println(b.Random())
+		time.Sleep(time.Second)
+		fmt.Println(time.Now())
+	}
 }
