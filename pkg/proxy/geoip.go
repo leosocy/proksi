@@ -50,12 +50,12 @@ func NewGeoInfo(ip string) (info *GeoInfo, err error) {
 	for _, f := range fetchers {
 		body := []byte{}
 		if body, err = f.fetch(ip); err == nil {
-			if info, err := f.unmarshal(body); err == nil {
+			if info, err = f.unmarshal(body); err == nil {
 				return info, nil
 			}
 		}
 	}
-	return info, fmt.Errorf("can't create a new geo info")
+	return
 }
 
 type fetcher interface {
@@ -132,7 +132,7 @@ func (f *ipAPIFetcher) init() {
 func (f *ipAPIFetcher) fetch(ip string) (body []byte, err error) {
 	url := fmt.Sprintf(f.urlFormatter, ip)
 	resp, body, errs := request.Get(url).EndBytes()
-	if resp.StatusCode != http.StatusOK || errs != nil {
+	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch info from %s failed", url)
 	}
 	return body, nil

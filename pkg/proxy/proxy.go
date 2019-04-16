@@ -6,12 +6,15 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/parnurzeal/gorequest"
 )
 
-// Type 匿名度, https://httpbin.org/get\?show_env\=1
+// Type 匿名度, https://httpbin.org/get?show_env=1
 type Type uint8
 
 // Protocol 代理类型
@@ -37,9 +40,9 @@ const (
 
 // Proxy IP Proxy data model.
 type Proxy struct {
-	IP        net.IP    `json:"ip"`
-	Port      uint32    `json:"port"`
-	GeoInfo   *GeoInfo  `json:"geo_info"`
+	IP        net.IP `json:"ip"`
+	Port      uint32 `json:"port"`
+	*GeoInfo  `json:"geo_info"`
 	Type      Type      `json:"type"`
 	Proto     Protocol  `json:"protocol"`
 	Speed     uint32    `json:"speed"` // unit: ms
@@ -48,10 +51,11 @@ type Proxy struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// NewProxy passes in the ip, port, and location strings,
+// NewProxy passes in the ip, port,
 // calculates the other field values,
 // and returns an initialized Proxy object
 func NewProxy(ip, port string) (*Proxy, error) {
+	getExtraInfo(ip, port)
 	parsedIP := net.ParseIP(ip)
 	if parsedIP == nil {
 		return nil, errors.New("invalid ip")
@@ -69,4 +73,10 @@ func NewProxy(ip, port string) (*Proxy, error) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}, nil
+}
+
+func getExtraInfo(ip, port string) {
+	proxyURL := fmt.Sprintf("http://%s:%s", ip, port)
+	resp, body, errs := gorequest.New().Proxy(proxyURL).Timeout(3 * time.Second).Get("http://httpbin.org/get?show_env=1").End()
+	fmt.Println(resp, body, errs)
 }
