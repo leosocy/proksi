@@ -5,19 +5,14 @@ import (
 	"time"
 
 	browser "github.com/EDDYCJY/fake-useragent"
+	"github.com/parnurzeal/gorequest"
 )
 
 func main() {
-	for {
-		client := browser.Client{
-			MaxPage: 5,
-			Delay:   100 * time.Millisecond,
-			Timeout: 5 * time.Second,
-		}
-		cache := browser.Cache{}
-		b := browser.NewBrowser(client, cache)
-		fmt.Println(b.Random())
-		time.Sleep(time.Second)
-		fmt.Println(time.Now())
-	}
+	ua := browser.Random()
+	fmt.Println(ua)
+	resp, body, errs := gorequest.New().Proxy("http://198.50.145.28:80").
+		Timeout(100*time.Second).Get("http://httpbin.org/get?show_env=1").
+		Set("User-Agent", ua).End()
+	fmt.Println(resp, body, errs)
 }
