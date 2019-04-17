@@ -5,10 +5,10 @@
 package proxy
 
 import (
-	"net/http"
-	"net/http/httptest"
-	"reflect"
+	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewProxy(t *testing.T) {
@@ -22,20 +22,23 @@ func TestNewProxy(t *testing.T) {
 		want    *Proxy
 		wantErr bool
 	}{
-		{name: "t", args: args{ip: "115.196.59.38", port: "8118"}, want: nil, wantErr: false},
+		{
+			name:    "IPPortStringWithSpace",
+			args:    args{ip: "1.2.3.4 ", port: "1234"},
+			want:    &Proxy{IP: net.ParseIP("1.2.3.4"), Port: 1234},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := httptest.NewServer(http.HandlerFunc(mockIPAPISuccessResp))
-			defer ts.Close()
-			fetchers = []fetcher{newMockFetcher(ipAPIFetcherName, ts.URL)}
+			assert := assert.New(t)
 			got, err := NewProxy(tt.args.ip, tt.args.port)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewProxy() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewProxy() = %v, want %v", got, tt.want)
+			assert.Equal(err != nil, tt.wantErr)
+			if tt.want == nil {
+				assert.Nil(got)
+			} else {
+				assert.Equal(tt.want.IP, got.IP)
+				assert.Equal(tt.want.Port, got.Port)
 			}
 		})
 	}

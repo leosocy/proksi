@@ -27,11 +27,9 @@ type GeoInfo struct {
 	ISP         string  `ip-api-json:"isp"`         // e.g. Chinanet
 }
 
-var request *gorequest.SuperAgent
 var fetchers []fetcher
 
 func init() {
-	request = gorequest.New()
 	fetcherNames := []string{
 		ipAPIFetcherName,
 	}
@@ -131,7 +129,7 @@ func (f *ipAPIFetcher) init() {
 
 func (f *ipAPIFetcher) fetch(ip string) (body []byte, err error) {
 	url := fmt.Sprintf(f.urlFormatter, ip)
-	resp, body, errs := request.Get(url).EndBytes()
+	resp, body, errs := gorequest.New().Get(url).EndBytes()
 	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch info from %s failed", url)
 	}

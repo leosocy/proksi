@@ -1,0 +1,10 @@
+// Copyright (c) 2019 leosocy, leosocy@gmail.com
+// Use of this source code is governed by a MIT-style license
+// that can be found in the LICENSE file.
+
+package consts
+
+const (
+	AnonymityDetectorHTTPURL  string = "http://httpbin.org/get?show_env=1"
+	AnonymityDetectorHTTPSURL string = "https://httpbin.org/get?show_env=1"
+)
