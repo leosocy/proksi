@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"time"
 
-	browser "github.com/EDDYCJY/fake-useragent"
-	"github.com/parnurzeal/gorequest"
+	"github.com/Leosocy/gipp/pkg/proxy"
 )
 
 func main() {
-	ua := browser.Random()
-	resp, body, _ := gorequest.New().Proxy("http://198.50.145.28:80").
-		Timeout(100*time.Second).Get("http://httpbin.org/get?show_env=1").
-		Set("User-Agent", ua).End()
-	fmt.Println(resp.Header)
-	fmt.Println(body)
+	pxy, _ := proxy.NewProxy("54.39.98.135", "3128")
+	if pxy != nil {
+		pxy.DetectAnonymity()
+	}
+	fmt.Printf("%+v", pxy)
 }

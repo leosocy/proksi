@@ -6,9 +6,8 @@ package proxy
 
 import (
 	"net"
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewProxy(t *testing.T) {
@@ -31,14 +30,13 @@ func TestNewProxy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
 			got, err := NewProxy(tt.args.ip, tt.args.port)
-			assert.Equal(err != nil, tt.wantErr)
-			if tt.want == nil {
-				assert.Nil(got)
-			} else {
-				assert.Equal(tt.want.IP, got.IP)
-				assert.Equal(tt.want.Port, got.Port)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewProxy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got.IP, tt.want.IP) {
+				t.Errorf("NewProxy().IP = %v, want %v", got.IP, tt.want)
 			}
 		})
 	}

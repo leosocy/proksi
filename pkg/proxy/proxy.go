@@ -8,14 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/consts"
 	"github.com/Leosocy/gipp/pkg/utils"
-	"github.com/parnurzeal/gorequest"
 )
 
 // Anonymity 匿名度, 请求`https://httpbin.org/get?show_env=1`
@@ -69,28 +66,42 @@ func NewProxy(ip, port string) (*Proxy, error) {
 	}, nil
 }
 
-// DetectAnonymity request `http://httpbin.org/get?show_env=1`,
-// and `https://httpbin.org/get?show_env=1` respectively.
-// Parse the `X-Real-Ip` and `Via` fields to determin the values of
-// `Anon` and  `HTTPS`.
-// If response from `https://xxx` is 200OK, the proxy support HTTPS.
-// If `X-Real-Ip` is equal to the server public ip, the anonymity is `Transparent`.
-// If `X-Real-Ip` is not equal to the server public ip ,
+// DetectGeoInfo set the GeoInfo field value by calling `NewGeoInfo`
+func (pxy *Proxy) DetectGeoInfo() (err error) {
+	pxy.GeoInfo, err = NewGeoInfo(pxy.IP.String())
+	return
+}
+
+// DetectAnonymity use `X-Real-Ip` and `Via` value in the response
+// of `http(s)://httpbin.org/get?show_env=1`.
+//
+// If response from `https://xxx` is OK, that means the proxy support HTTPS.
+// If `X-Real-Ip` is equal to the public ip, the anonymity is `Transparent`.
+// If `X-Real-Ip` is not equal to the public ip,
 // and `Via` field exists, the anonymity is `Anonymous`.
 // Otherwise, the anonymity is `Elite`.
 func (pxy *Proxy) DetectAnonymity() (err error) {
-	proxyURL := pxy.URL()
-	var httpResp []byte
-	if httpResp, err = tryRequestWithProxy(consts.AnonymityDetectorHTTPURL, proxyURL); err != nil {
+	ipTool := utils.GetHTTPBinIPTool()
+	if _, err := ipTool.GetPublicIPUsingProxyAndHTTPS(pxy.URL()); err != nil {
+		pxy.HTTPS = false
+	}
+	var (
+		publicIP, publicIPUsingProxy net.IP
+		via                          string
+	)
+	if publicIP, err = ipTool.GetPublicIP(); err != nil {
 		return
 	}
-	if _, err = tryRequestWithProxy(consts.AnonymityDetectorHTTPSURL, proxyURL); err != nil {
-		pxy.HTTPS = false // request https failed means the proxy doesn't support https.
+	if publicIPUsingProxy, via, err = ipTool.GetPublicIPAndViaUsingProxy(pxy.URL()); err != nil {
+		return
 	}
-	var publicIP, localPublicIP net.IP
-	if publicIP, err = utils.ParsePublicIPFromResponseBody(httpResp); err == nil {
-		if publicIP.Equal(localPublicIP) {
-			pxy.Anon = Transparent
+	if publicIP.Equal(publicIPUsingProxy) {
+		pxy.Anon = Transparent
+	} else {
+		if via != "" {
+			pxy.Anon = Anonymous
+		} else {
+			pxy.Anon = Elite
 		}
 	}
 	return
@@ -103,13 +114,4 @@ func (pxy *Proxy) DetectLatencyAndSpeed() {
 // URL returns string like `ip:port`
 func (pxy *Proxy) URL() string {
 	return fmt.Sprintf("http://%s:%d", pxy.IP.String(), pxy.Port)
-}
-
-func tryRequestWithProxy(reqURL, proxyURL string) (body []byte, err error) {
-	resp, body, errs := gorequest.New().
-		Proxy(proxyURL).Timeout(100 * time.Second).Get(reqURL).EndBytes()
-	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Get %s using proxy: %s failed", reqURL, proxyURL)
-	}
-	return body, nil
 }
