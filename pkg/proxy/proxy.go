@@ -67,8 +67,8 @@ func NewProxy(ip, port string) (*Proxy, error) {
 }
 
 // DetectGeoInfo set the GeoInfo field value by calling `NewGeoInfo`
-func (pxy *Proxy) DetectGeoInfo() (err error) {
-	pxy.GeoInfo, err = NewGeoInfo(pxy.IP.String())
+func (pxy *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
+	pxy.GeoInfo, err = f.Do(pxy.IP.String())
 	return
 }
 

@@ -7,9 +7,7 @@ import (
 )
 
 func main() {
-	pxy, _ := proxy.NewProxy("54.39.98.135", "3128")
-	if pxy != nil {
-		pxy.DetectAnonymity()
-	}
-	fmt.Printf("%+v", pxy)
+	fetcher, _ := proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher)
+	info, _ := fetcher.Do("8.8.8.8")
+	fmt.Printf("%v", info)
 }
