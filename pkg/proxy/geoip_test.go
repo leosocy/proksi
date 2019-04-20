@@ -112,7 +112,7 @@ func BenchmarkGeoInfoFetcherDo(b *testing.B) {
 	}
 }
 
-func Test_newFetcher(t *testing.T) {
+func TestNewGeoInfoFetcher(t *testing.T) {
 	type args struct {
 		name string
 	}
@@ -139,11 +139,11 @@ func Test_newFetcher(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotF, err := NewGeoInfoFetcher(tt.args.name)
 			if (gotF != nil) != tt.wantF {
-				t.Errorf("newFetcher() error = %v, wantF %v", gotF, tt.wantF)
+				t.Errorf("NewGeoInfoFetcher() F = %v, wantF %v", gotF, tt.wantF)
 				return
 			}
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newFetcher() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewGeoInfoFetcher() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})

@@ -37,6 +37,9 @@ const (
 // fetch(): you can request to url with ip.
 // unmarshal(): unmarshal to GeoInfo struct accord to the tag name which define in the struct.
 type GeoInfoFetcher interface {
+	// Do returns the geo information for ip.
+	// Use the fetcher to make a fetching request,
+	// and parse response body.
 	Do(ip string) (info *GeoInfo, err error)
 	init()
 	fetch(ip string) (body []byte, err error)

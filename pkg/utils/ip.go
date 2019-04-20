@@ -15,6 +15,11 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+// HTTPTool provides methods to get client information,
+// such as public IP, useragent, and so on.
+type HTTPTool interface {
+}
+
 var (
 	httpURLOfHTTPBin  = "http://httpbin.org/get?show_env=1"
 	httpsURLOfHTTPBin = "https://httpbin.org/get?show_env=1"
@@ -24,7 +29,9 @@ var (
 // such as public IP, useragent, and so on.
 // It gives the result by making a specific request to the
 // `http(s)://httpbin.org` website and then parsing the response.
-type HTTPBinIPTool struct{}
+type HTTPBinIPTool struct {
+	*gorequest.SuperAgent
+}
 
 // GetHTTPBinIPTool returns a tool instance.
 func GetHTTPBinIPTool() HTTPBinIPTool {
