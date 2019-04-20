@@ -15,9 +15,10 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-// HTTPTool provides methods to get client information,
-// such as public IP, useragent, and so on.
 type HTTPTool interface {
+	GetPublicIP() (ip net.IP, err error)
+	GetPublicIPUsingProxy() (ip net.IP, err error)
+	GetClientHeaders() (headers map[string]interface{}, err error)
 }
 
 var (
