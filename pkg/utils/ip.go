@@ -15,6 +15,12 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
+type HTTPTool interface {
+	GetPublicIP() (ip net.IP, err error)
+	GetPublicIPUsingProxy() (ip net.IP, err error)
+	GetClientHeaders() (headers map[string]interface{}, err error)
+}
+
 var (
 	httpURLOfHTTPBin  = "http://httpbin.org/get?show_env=1"
 	httpsURLOfHTTPBin = "https://httpbin.org/get?show_env=1"
