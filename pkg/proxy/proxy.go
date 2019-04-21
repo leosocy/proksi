@@ -22,6 +22,8 @@ import (
 type Anonymity uint8
 
 const (
+	// Unknown 探测不到匿名度
+	Unknown Anonymity = 0
 	// Transparent 透明：服务器知道你使用了代理，并且能查到原始IP
 	Transparent Anonymity = 1
 	// Anonymous 普通匿名(较为少见)：服务器知道你使用了代理，但是查不到原始IP
@@ -72,39 +74,45 @@ func (pxy *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
 	return
 }
 
-// DetectAnonymity use `X-Real-Ip` and `Via` value in the response
-// of `http(s)://httpbin.org/get?show_env=1`.
+// DetectAnonymity use a `RequestHeadersGetter` to get a http request headers,
+// and then use the following logic to determine the anonymity
 //
-// If response from `https://xxx` is OK, that means the proxy support HTTPS.
 // If `X-Real-Ip` is equal to the public ip, the anonymity is `Transparent`.
 // If `X-Real-Ip` is not equal to the public ip,
 // and `Via` field exists, the anonymity is `Anonymous`.
 // Otherwise, the anonymity is `Elite`.
-func (pxy *Proxy) DetectAnonymity() (err error) {
-	ipTool := utils.GetHTTPBinIPTool()
-	if _, err := ipTool.GetPublicIPUsingProxyAndHTTPS(pxy.URL()); err != nil {
-		pxy.HTTPS = false
-	}
+func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 	var (
+		headers, headersUsingProxy   utils.HTTPRequestHeaders
 		publicIP, publicIPUsingProxy net.IP
-		via                          string
+		errWhenParsePublicIP         = errors.New("can't parse public ip in request headers")
 	)
-	if publicIP, err = ipTool.GetPublicIP(); err != nil {
+	if headers, err = g.GetRequestHeaders(); err != nil {
 		return
 	}
-	if publicIPUsingProxy, via, err = ipTool.GetPublicIPAndViaUsingProxy(pxy.URL()); err != nil {
+	if headersUsingProxy, err = g.GetRequestHeadersUsingProxy(pxy.URL()); err != nil {
 		return
+	}
+	if publicIP = headers.ParsePublicIP(); publicIP == nil {
+		return errWhenParsePublicIP
+	}
+	if publicIPUsingProxy = headersUsingProxy.ParsePublicIP(); publicIPUsingProxy == nil {
+		return errWhenParsePublicIP
 	}
 	if publicIP.Equal(publicIPUsingProxy) {
 		pxy.Anon = Transparent
 	} else {
-		if via != "" {
+		if headersUsingProxy.Via != "" {
 			pxy.Anon = Anonymous
 		} else {
 			pxy.Anon = Elite
 		}
 	}
 	return
+}
+
+func (pxy *Proxy) DetectHTTPSSupported() {
+
 }
 
 func (pxy *Proxy) DetectLatencyAndSpeed() {

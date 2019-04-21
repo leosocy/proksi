@@ -9,5 +9,5 @@ import (
 func main() {
 	fetcher, _ := proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher)
 	info, _ := fetcher.Do("8.8.8.8")
-	fmt.Printf("%v", info)
+	fmt.Printf("%+v", info)
 }
