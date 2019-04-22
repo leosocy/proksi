@@ -36,26 +36,51 @@ var (
 	httpsURLOfHTTPBin = "https://httpbin.org/get?show_env=1"
 )
 
-// HTTPBinIPTool 通过请求`http(s)://httpbin.org`获取并解析请求头
-type HTTPBinIPTool struct{}
+// HTTPBinUtil 通过请求`http(s)://httpbin.org`获取并解析请求头
+type HTTPBinUtil struct{}
 
 // GetRequestHeader implements RequestHeadersGetter.GetRequestHeader
-func (t HTTPBinIPTool) GetRequestHeader() (headers HTTPRequestHeaders, err error) {
-	return t.GetRequestHeaderUsingProxy("")
+func (u HTTPBinUtil) GetRequestHeader() (headers HTTPRequestHeaders, err error) {
+	return u.GetRequestHeaderUsingProxy("")
 }
 
 // GetRequestHeaderUsingProxy implements RequestHeadersGetter.GetRequestHeaderUsingProxy
-func (t HTTPBinIPTool) GetRequestHeaderUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
-	resp, body, errs := gorequest.New().
-		Proxy(proxyURL).Timeout(100 * time.Second).
-		Get(httpURLOfHTTPBin).EndBytes()
-	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
-		return headers, fmt.Errorf("Request %s failed. Proxy[%s]", httpURLOfHTTPBin, proxyURL)
+func (u HTTPBinUtil) GetRequestHeaderUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
+	if body, err := u.makeRequest(proxyURL, false); err == nil {
+		return u.unmarshal(body)
 	}
-	return t.unmarshal(body)
+	return
 }
 
-func (t HTTPBinIPTool) unmarshal(body []byte) (headers HTTPRequestHeaders, err error) {
+// ProxyUsable implements checker.UsabilityChecker
+func (u HTTPBinUtil) ProxyUsable(proxyURL string) bool {
+	_, err := u.makeRequest(proxyURL, false)
+	return err == nil
+}
+
+// ProxyHTTPSUsable implements checker.HTTPSUsabilityChecker
+func (u HTTPBinUtil) ProxyHTTPSUsable(proxyURL string) bool {
+	_, err := u.makeRequest(proxyURL, true)
+	return err == nil
+}
+
+func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err error) {
+	var reqURL string
+	if https {
+		reqURL = httpsURLOfHTTPBin
+	} else {
+		reqURL = httpURLOfHTTPBin
+	}
+	resp, body, errs := gorequest.New().Proxy(proxyURL).
+		Timeout(100 * time.Second).Get(reqURL).EndBytes()
+	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
+		return nil,
+			fmt.Errorf("Request %s failed, proxy [%s], https [%t]", reqURL, proxyURL, https)
+	}
+	return body, nil
+}
+
+func (u HTTPBinUtil) unmarshal(body []byte) (headers HTTPRequestHeaders, err error) {
 	var bj map[string]interface{}
 	if err = json.Unmarshal(body, &bj); err != nil {
 		return
@@ -73,14 +98,14 @@ func (t HTTPBinIPTool) unmarshal(body []byte) (headers HTTPRequestHeaders, err e
 // 首先解析`X-Forwarded-For`字段的第一条记录的IP
 // 如果不存在，则解析`X-Real-Ip`字段值
 // 如果都解析失败，则返回nil
-func (h HTTPRequestHeaders) ParsePublicIP() (ip net.IP) {
+func (h HTTPRequestHeaders) ParsePublicIP() (net.IP, error) {
 	for _, ipStr := range strings.Split(h.XForwardedFor, ",") {
-		if ip = net.ParseIP(strings.TrimSpace(ipStr)); ip != nil {
-			return
+		if ip := net.ParseIP(strings.TrimSpace(ipStr)); ip != nil {
+			return ip, nil
 		}
 	}
-	if ip = net.ParseIP(strings.TrimSpace(h.XRealIP)); ip != nil {
-		return
+	if ip := net.ParseIP(strings.TrimSpace(h.XRealIP)); ip != nil {
+		return ip, nil
 	}
-	return
+	return nil, errors.New("can't parse public ip")
 }

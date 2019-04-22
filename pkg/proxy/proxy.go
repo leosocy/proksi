@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Leosocy/gipp/pkg/checker"
+
 	"github.com/Leosocy/gipp/pkg/utils"
 )
 
@@ -44,7 +46,7 @@ type Proxy struct {
 	Speed     uint32    `json:"speed"`         // unit: kb/s
 	Score     uint      `json:"score"`         // full is 100
 	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CheckedAt time.Time `json:"checked_at"`
 }
 
 // NewProxy passes in the ip, port,
@@ -64,7 +66,7 @@ func NewProxy(ip, port string) (*Proxy, error) {
 		Port:      uint32(parsedPort),
 		Score:     proxyScoreMaximum,
 		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CheckedAt: time.Now(),
 	}, nil
 }
 
@@ -74,7 +76,7 @@ func (pxy *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
 	return
 }
 
-// DetectAnonymity use a `RequestHeadersGetter` to get a http request headers,
+// DetectAnonymity use a `utils.RequestHeadersGetter` to get a http request headers,
 // and then use the following logic to determine the anonymity
 //
 // If `X-Real-Ip` is equal to the public ip, the anonymity is `Transparent`.
@@ -85,19 +87,18 @@ func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 	var (
 		headers, headersUsingProxy   utils.HTTPRequestHeaders
 		publicIP, publicIPUsingProxy net.IP
-		errWhenParsePublicIP         = errors.New("can't parse public ip in request headers")
 	)
 	if headers, err = g.GetRequestHeaders(); err != nil {
+		return
+	}
+	if publicIP, err = headers.ParsePublicIP(); err != nil {
 		return
 	}
 	if headersUsingProxy, err = g.GetRequestHeadersUsingProxy(pxy.URL()); err != nil {
 		return
 	}
-	if publicIP = headers.ParsePublicIP(); publicIP == nil {
-		return errWhenParsePublicIP
-	}
-	if publicIPUsingProxy = headersUsingProxy.ParsePublicIP(); publicIPUsingProxy == nil {
-		return errWhenParsePublicIP
+	if publicIPUsingProxy, err = headersUsingProxy.ParsePublicIP(); err != nil {
+		return
 	}
 	if publicIP.Equal(publicIPUsingProxy) {
 		pxy.Anon = Transparent
@@ -111,8 +112,10 @@ func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 	return
 }
 
-func (pxy *Proxy) DetectHTTPSSupported() {
-
+// DetectHTTPSSupported use a `checker.HTTPSUsabilityChecker` to
+// check whether the proxy can access HTTPS sites.
+func (pxy *Proxy) DetectHTTPSSupported(c checker.HTTPSUsabilityChecker) {
+	pxy.HTTPS = c.ProxyHTTPSUsable(pxy.URL())
 }
 
 func (pxy *Proxy) DetectLatencyAndSpeed() {

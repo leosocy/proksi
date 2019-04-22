@@ -11,7 +11,7 @@
 
 - Proxy: http(s)代理对象，包括ip, port, geo info, anonymity, latency, speed等属性。
 - Spider: 免费代理资源爬取器，接口类型，不同的免费资源有不同的实现，例如ProxyListPlusSpider/IP181Spider等。
-- Inspector: 检验代理质量，包括时延、网速等等。
+- Checker: 检验代理质量，包括时延、网速等等。
 - Storage: 存储Proxy的介质，例如MySQL、Mongo、Redis等等。
 - Service: 提供api，获取可用ip代理。
 
@@ -23,8 +23,9 @@
 
 ### proxies
 
-- `http://localhost:8000/proxies?ipp=10&page=1`: 根据评分DESC返回10个代理
-- `http://localhost:8000/proxies?ipp=10&page=1&geoinfo.country_code=CN`: 返回代理Geo国家码为`中国`的10个代理
+|                                API                                | Method |             Description              |                       Args                        |  Try  |
+| :---------------------------------------------------------------: | :----: | :----------------------------------: | :-----------------------------------------------: | :---: |
+|           `http://localhost:8000/proxies?ipp=10&page=1`           |  GET   | 根据Score.Desc，返回指定页的10个代理 | `ipp`:一页返回n条记录，range(0, 50]  `page`:第n页 |       |
+| `http://localhost:8000/proxies?ipp=10&page=1&geo.country_code=CN` |  GET   | 根据Geo信息的国家码返回`中国`的代理  |                  `geo.xxx`: xxx                   |
 
 ### uas
-
