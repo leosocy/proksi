@@ -1,0 +1,192 @@
+// Copyright (c) 2019 leosocy, leosocy@gmail.com
+// Use of this source code is governed by a MIT-style license
+// that can be found in the LICENSE file.
+
+package utils
+
+import (
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"testing"
+
+	"github.com/Leosocy/gipp/pkg/checker"
+)
+
+const (
+	fakeHTTPBinIPToolXForwardedForBody string = `{
+		"headers": {
+		  "Host": "httpbin.org",
+		  "Via": "1.1 squid",
+		  "X-Forwarded-For": "1.2.3.4, 5.6.7.8", 
+		  "X-Real-Ip": "9.10.11.12"
+		}
+	  }`
+	fakeHTTPBinIPToolRealIPBody string = `{
+		"headers": {
+		  "Host": "httpbin.org",
+		  "X-Real-Ip": "9.10.11.12"
+		}
+	  }`
+	fakeHTTPBinIPToolEmptyBody string = `{}`
+)
+
+func TestHTTPBinUtil_GetRequestHeaderUsingProxy(t *testing.T) {
+	type args struct {
+		proxyURL string
+		fakeBody string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantHeaders HTTPRequestHeaders
+		wantErr     bool
+	}{
+		{
+			name: "WithXForwardedForBody",
+			args: args{proxyURL: "", fakeBody: fakeHTTPBinIPToolXForwardedForBody},
+			wantHeaders: HTTPRequestHeaders{
+				XForwardedFor: "1.2.3.4, 5.6.7.8", XRealIP: "9.10.11.12", Via: "1.1 squid",
+			},
+			wantErr: false,
+		},
+		{
+			name: "WithXRealIPBody",
+			args: args{proxyURL: "", fakeBody: fakeHTTPBinIPToolRealIPBody},
+			wantHeaders: HTTPRequestHeaders{
+				XForwardedFor: "", XRealIP: "9.10.11.12", Via: "",
+			},
+			wantErr: false,
+		},
+		{
+			name:        "WithEmptyBody",
+			args:        args{proxyURL: "", fakeBody: fakeHTTPBinIPToolEmptyBody},
+			wantHeaders: HTTPRequestHeaders{},
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(tt.args.fakeBody))
+			}))
+			defer ts.Close()
+			httpURLOfHTTPBin = ts.URL
+			gotHeaders, err := HTTPBinUtil{}.GetRequestHeaderUsingProxy(tt.args.proxyURL)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("HTTPBinUtil.GetRequestHeaderUsingProxy() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotHeaders, tt.wantHeaders) {
+				t.Errorf("HTTPBinUtil.GetRequestHeaderUsingProxy() = %v, want %v", gotHeaders, tt.wantHeaders)
+			}
+		})
+	}
+}
+
+func TestParsePublicIP(t *testing.T) {
+	type args struct {
+		headers HTTPRequestHeaders
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantIP  net.IP
+		wantErr bool
+	}{
+		{
+			name: "XForwardedForExists",
+			args: args{
+				headers: HTTPRequestHeaders{
+					XForwardedFor: "1.2.3.4, 5.6.7.8",
+					XRealIP:       "9.10.11.12",
+				},
+			},
+			wantIP:  net.ParseIP("1.2.3.4"),
+			wantErr: false,
+		},
+		{
+			name: "XForwardedForNotExists",
+			args: args{
+				headers: HTTPRequestHeaders{
+					XRealIP: "9.10.11.12",
+				},
+			},
+			wantIP:  net.ParseIP("9.10.11.12"),
+			wantErr: false,
+		},
+		{
+			name: "AllNotExists",
+			args: args{
+				headers: HTTPRequestHeaders{},
+			},
+			wantIP:  nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotIP, err := tt.args.headers.ParsePublicIP()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParsePublicIP() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotIP, tt.wantIP) {
+				t.Errorf("ParsePublicIP() = %v, want %v", gotIP, tt.wantIP)
+			}
+		})
+	}
+}
+
+func BenchmarkHTTPBinIPTool_GetRequestHeaderUsingProxy(b *testing.B) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(fakeHTTPBinIPToolXForwardedForBody))
+	}))
+	defer ts.Close()
+	httpURLOfHTTPBin = ts.URL
+	for i := 0; i < b.N; i++ {
+		HTTPBinUtil{}.GetRequestHeaderUsingProxy("")
+	}
+}
+
+func TestHTTPBinUtil_ProxyHTTPSUsable(t *testing.T) {
+	type args struct {
+		fakeResp http.HandlerFunc
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "RequestOk",
+			args: args{fakeResp: func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(""))
+			}},
+			want: true,
+		},
+		{
+			name: "RequestFail",
+			args: args{fakeResp: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusTooManyRequests)
+				w.Write([]byte(""))
+			}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := httptest.NewServer(http.HandlerFunc(tt.args.fakeResp))
+			defer ts.Close()
+			httpsURLOfHTTPBin = ts.URL
+			var c checker.HTTPSUsabilityChecker
+			c = HTTPBinUtil{}
+			if got := c.ProxyHTTPSUsable(""); got != tt.want {
+				t.Errorf("HTTPBinUtil.ProxyHTTPSUsable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

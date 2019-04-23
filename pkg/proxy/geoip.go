@@ -15,7 +15,7 @@ import (
 )
 
 // GeoInfo 包括ip的地理位置相关信息，包括国家省市，运营商，经纬度等等
-// ip-api-json tag用于从 `http://www.ip-api.com/docs/api:json` 中拉取信息
+// ip-api-json tag用于ip-api fetcher从 `http://www.ip-api.com/docs/api:json` 中拉取信息
 type GeoInfo struct {
 	CountryName string  `ip-api-json:"country"`     // e.g. China
 	CountryCode string  `ip-api-json:"countryCode"` // e.g. CN
@@ -27,50 +27,29 @@ type GeoInfo struct {
 	ISP         string  `ip-api-json:"isp"`         // e.g. Chinanet
 }
 
-var request *gorequest.SuperAgent
-var fetchers []fetcher
+const (
+	// NameOfIPAPIFetcher name of ip-api fetcher implements.
+	NameOfIPAPIFetcher string = "ip-api"
+)
 
-func init() {
-	request = gorequest.New()
-	fetcherNames := []string{
-		ipAPIFetcherName,
-	}
-	for _, name := range fetcherNames {
-		if f, err := newFetcher(name); err == nil {
-			fetchers = append(fetchers, f)
-		}
-	}
-}
-
-// NewGeoInfo returns the geo information for ip.
-// It will get a fetcher from the `fetchers`,
-// make a fetching request, and parse response body,
-// until the parse succeeds or the loop ends
-func NewGeoInfo(ip string) (info *GeoInfo, err error) {
-	for _, f := range fetchers {
-		body := []byte{}
-		if body, err = f.fetch(ip); err == nil {
-			if info, err := f.unmarshal(body); err == nil {
-				return info, nil
-			}
-		}
-	}
-	return info, fmt.Errorf("can't create a new geo info")
-}
-
-type fetcher interface {
+// GeoInfoFetcher have some functions which use to fetch geo information from specify url.
+// init(): you can init url formatter or some other initial work.
+// fetch(): you can request to url with ip.
+// unmarshal(): unmarshal to GeoInfo struct accord to the tag name which define in the struct.
+type GeoInfoFetcher interface {
+	// Do returns the geo information for ip.
+	// Use the fetcher to make a fetching request,
+	// and parse response body.
+	Do(ip string) (info *GeoInfo, err error)
 	init()
 	fetch(ip string) (body []byte, err error)
 	unmarshal(body []byte) (info *GeoInfo, err error)
 }
 
-const (
-	ipAPIFetcherName string = "ip-api"
-)
-
-func newFetcher(name string) (f fetcher, err error) {
+// NewGeoInfoFetcher returns a fetcher for name.
+func NewGeoInfoFetcher(name string) (f GeoInfoFetcher, err error) {
 	switch name {
-	case ipAPIFetcherName:
+	case NameOfIPAPIFetcher:
 		f = &ipAPIFetcher{
 			baseFetcher{tagName: "ip-api-json", baseURL: "http://ip-api.com"},
 		}
@@ -85,6 +64,23 @@ type baseFetcher struct {
 	tagName      string
 	baseURL      string
 	urlFormatter string
+}
+
+func (f *baseFetcher) Do(ip string) (info *GeoInfo, err error) {
+	var body []byte
+	if body, err = f.fetch(ip); err == nil {
+		info, err = f.unmarshal(body)
+	}
+	return
+}
+
+func (f *baseFetcher) fetch(ip string) (body []byte, err error) {
+	url := fmt.Sprintf(f.urlFormatter, ip)
+	resp, body, errs := gorequest.New().Get(url).EndBytes()
+	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch info from %s failed", url)
+	}
+	return body, nil
 }
 
 func (f *baseFetcher) unmarshal(body []byte) (info *GeoInfo, err error) {
@@ -127,13 +123,4 @@ func (f *ipAPIFetcher) init() {
 		sb.WriteString(fmt.Sprintf(",%s", tagValue))
 	}
 	f.urlFormatter = sb.String()
-}
-
-func (f *ipAPIFetcher) fetch(ip string) (body []byte, err error) {
-	url := fmt.Sprintf(f.urlFormatter, ip)
-	resp, body, errs := request.Get(url).EndBytes()
-	if resp.StatusCode != http.StatusOK || errs != nil {
-		return nil, fmt.Errorf("fetch info from %s failed", url)
-	}
-	return body, nil
 }

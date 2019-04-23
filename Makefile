@@ -15,6 +15,7 @@ help:
 	@echo
 	@echo 'Usage:'
 	@echo '    make fmt             Fomat source cide.'
+	@echo '    make download        Download dependent moduls.'
 	@echo '    make test            Run tests on a compiled project.'
 	@echo '    make build           Compile the project.'
 	@echo '    make build-alpine    Compile optimized for alpine linux.'
@@ -27,12 +28,15 @@ help:
 fmt:
 	go fmt ./...
 
-build:
+download:
+	go mod download
+
+build: download
 	@echo "building ${BIN_NAME} ${VERSION}"
 	@echo "GOPATH=${GOPATH}"
 	go build -ldflags "-X github.com/Leosocy/gipp/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/Leosocy/gipp/version.BuildDate=${BUILD_DATE}" -o bin/${BIN_NAME}
 
-build-alpine:
+build-alpine: download
 	@echo "building ${BIN_NAME} ${VERSION}"
 	@echo "GOPATH=${GOPATH}"
 	go build -ldflags '-w -linkmode external -extldflags "-static" -X github.com/Leosocy/gipp/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/Leosocy/gipp/version.BuildDate=${BUILD_DATE}' -o bin/${BIN_NAME}
