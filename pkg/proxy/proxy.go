@@ -118,8 +118,14 @@ func (pxy *Proxy) DetectHTTPSSupported(c checker.HTTPSUsabilityChecker) {
 	pxy.HTTPS = c.ProxyHTTPSUsable(pxy.URL())
 }
 
-func (pxy *Proxy) DetectLatencyAndSpeed() {
+// DetectLatency TODO: detect proxy lentency by request one website N times,
+// and calculate average response time.
+func (pxy *Proxy) DetectLatency() {
+}
 
+// DetectSpeed TODO: detect proxy speed by download a large file,
+// and calculate speed `kb_of_file_size / download_cost_time = n kb/s`
+func (pxy *Proxy) DetectSpeed() {
 }
 
 // URL returns string like `ip:port`
