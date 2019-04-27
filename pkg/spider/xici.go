@@ -6,28 +6,37 @@ package spider
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/Leosocy/gipp/pkg/proxy"
+	"github.com/PuerkitoBio/goquery"
 )
 
-// XiciSpider root url: https://www.xicidaili.com/nn/
-type XiciSpider struct {
-	BaseSpider
+const xiciBaseURL = "https://www.xicidaili.com"
+
+type xiciParser struct{}
+
+func (p xiciParser) Parse(response *http.Response, proxyCh chan<- *proxy.Proxy) {
+	doc, err := goquery.NewDocumentFromResponse(response)
+	if err != nil {
+		return
+	}
+	doc.Find("table").Find("tr").Each(func(_ int, tr *goquery.Selection) {
+		if tr.HasClass("odd") || tr.HasClass("") {
+			ip := tr.Children().Get(1).FirstChild.Data
+			port := tr.Children().Get(2).FirstChild.Data
+			if proxy, err := proxy.NewProxy(ip, port); err == nil {
+				proxyCh <- proxy
+			}
+		}
+	})
 }
 
-func (s *XiciSpider) Crawl(chan<- *proxy.Proxy) {
-
-	req, err := http.NewRequest("GET", "http://www.xicidaili.com/nn/", nil)
-	if err != nil {
-		panic(err)
+func buildXiciUrls() (urls []string) {
+	for _, domain := range []string{"nn", "nt", "wn", "wt"} {
+		for page := 1; page <= 10; page++ {
+			urls = append(urls, fmt.Sprintf("%s/%s/%d", xiciBaseURL, domain, page))
+		}
 	}
-	req.Header.Add("User-Agent", "123")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Print(string(body))
-
+	return
 }

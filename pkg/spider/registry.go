@@ -5,5 +5,20 @@
 package spider
 
 const (
-	XiciSpiderName string = "xici"
+	NameOfXici string = "xici"
 )
+
+// NewSpider returns a new spider accord to the name.
+func NewSpider(name string) *Spider {
+	switch name {
+	case NameOfXici:
+		return &Spider{
+			name: name,
+			urls: buildXiciUrls(),
+			c:    DefaultCrawler{},
+			p:    xiciParser{},
+		}
+	default:
+		return nil
+	}
+}

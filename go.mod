@@ -2,7 +2,7 @@ module github.com/Leosocy/gipp
 
 require (
 	github.com/EDDYCJY/fake-useragent v0.2.0
-	github.com/PuerkitoBio/goquery v1.5.0 // indirect
+	github.com/PuerkitoBio/goquery v1.5.0
 	github.com/Sirupsen/logrus v1.0.6
 	github.com/elazarl/goproxy v0.0.0-20190410145444-c548f45dcf1d // indirect
 	github.com/magiconair/properties v1.8.0
