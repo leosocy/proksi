@@ -9,8 +9,8 @@ import (
 
 func main() {
 	proxyChan := make(chan *proxy.Proxy)
-	s := spider.NewSpiderName(spider.NameOfXici)
-	s.Start()
+	s := spider.NewSpiderName(spider.NameOfKuai)
+	s.Crawl()
 	for {
 		select {
 		case p := <-proxyChan:

@@ -27,7 +27,10 @@ require (
 
 replace (
 	golang.org/x/net v0.0.0-20180218175443-cbe0f9307d01 => github.com/golang/net v0.0.0-20190404232315-eb5bcb51f2a3
+	golang.org/x/net v0.0.0-20180724234803-3673e40ba225 => github.com/golang/net v0.0.0-20190424112056-4829fb13d2c6
 	golang.org/x/net v0.0.0-20181114220301-adae6a3d119a => github.com/golang/net v0.0.0-20190404232315-eb5bcb51f2a3
 )
 
 replace golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => github.com/golang/crypto v0.0.0-20190411191339-88737f569e3a
+
+replace google.golang.org/appengine v1.5.0 => github.com/golang/appengine v1.5.0
