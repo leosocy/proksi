@@ -5,64 +5,94 @@
 package spider
 
 import (
-	"errors"
-	"net/http"
+	"fmt"
+	"log"
+	"time"
 
 	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/Leosocy/gipp/pkg/proxy"
-	"github.com/Sirupsen/logrus"
-	"github.com/parnurzeal/gorequest"
+	"github.com/gocolly/colly"
 )
 
-// Crawler is the interface that wraps the basic Crawl method.
-//
-// It crawls a url of proxy website, and returns the response and error.
-type Crawler interface {
-	Crawl(url string) (response *http.Response, err error)
-}
-
-// DefaultCrawler implements Crawl.
-type DefaultCrawler struct{}
-
-func (c DefaultCrawler) Crawl(url string) (response *http.Response, err error) {
-	logrus.Infof("[spider][default crawler] start crawling %s", url)
-	resp, _, errs := gorequest.New().Proxy("http://111.177.171.189:9999").
-		Get(url).Set("User-Agent", browser.Random()).EndBytes()
-	if errs != nil {
-		err = errs[0]
-	}
-	if resp == nil || resp.StatusCode != http.StatusOK {
-		err = errors.New("crawl failed, response is nil or status not ok")
-	}
-	if err != nil {
-		logrus.Warnf("[spider][default crawler] crawl %s failed. %v", url, err)
-	}
-	return resp, err
-}
-
-// Parser is the interface that wraps the basic Parse method.
-//
-// It parse the http response from a proxy website
-// to a html document or something others,
-// and add the proxy records to a channel.
-type Parser interface {
-	Parse(response *http.Response, proxyCh chan<- *proxy.Proxy)
-}
-
-// Spider crawl using C and parse response using R
+// Spider provides the instance for crawling jobs.
 type Spider struct {
-	name string
-	urls []string
-	c    Crawler
-	p    Parser
+	// Name is the name of spider defined in `spider/registry.go`
+	Name          string
+	urls          []string
+	xpathQuery    string
+	selectorQuery string
+	proxyPool     chan<- *proxy.Proxy
+	c             *colly.Collector
 }
 
-// Do iterates over the urls and then calls c.rawl and p.parse,
-// respectively, to add the proxy to the channel
-func (s *Spider) Do(proxyCh chan<- *proxy.Proxy) {
+// NewSpider creates a new Spider instance with default configuration.
+func NewSpider(name string, options ...func(*Spider)) *Spider {
+	s := &Spider{Name: name}
+	s.Init()
+
+	for _, opt := range options {
+		opt(s)
+	}
+
+	s.RegisterCallbacks()
+
+	return s
+}
+
+// Urls sets the urls of the spider.
+func Urls(urls []string) func(*Spider) {
+	return func(s *Spider) {
+		s.urls = urls
+	}
+}
+
+// XPathQuery sets the query that used to locate the ip and port in XML.
+func XPathQuery(xpath string) func(*Spider) {
+	return func(s *Spider) {
+		s.xpathQuery = xpath
+	}
+}
+
+// SelectorQuery sets the query that used to locate the ip and port in HTML.
+// If not set, spider won't handle OnHTML.
+func SelectorQuery(selector string) func(*Spider) {
+	return func(s *Spider) {
+		s.selectorQuery = selector
+	}
+}
+
+// Init initializes the Spider's private variables
+// and sets default configuration for the Spider
+func (s *Spider) Init() {
+	s.c = colly.NewCollector(
+		colly.Async(true),
+		colly.UserAgent(browser.Random()),
+	)
+	s.c.Limit(&colly.LimitRule{
+		Parallelism: 4,
+		Delay:       5 * time.Second,
+	})
+}
+
+// RegisterCallbacks registers some callbacks after option spider.
+func (s *Spider) RegisterCallbacks() {
+	if s.xpathQuery != "" {
+		s.c.OnXML(s.xpathQuery, func(e *colly.XMLElement) {
+			fmt.Printf("%+v", e)
+		})
+	}
+	if s.selectorQuery != "" {
+		s.c.OnHTML(s.selectorQuery, func(e *colly.HTMLElement) {
+			fmt.Printf("%+v", e)
+		})
+	}
+	s.c.OnError(func(r *colly.Response, e error) {
+		log.Println("error:", e, r.Request.URL, string(r.Body))
+	})
+}
+
+func (s *Spider) Start() {
 	for _, url := range s.urls {
-		if resp, err := s.c.Crawl(url); err == nil {
-			s.p.Parse(resp, proxyCh)
-		}
+		s.c.Visit(url)
 	}
 }

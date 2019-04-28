@@ -8,17 +8,14 @@ const (
 	NameOfXici string = "xici"
 )
 
-// NewSpider returns a new spider accord to the name.
-func NewSpider(name string) *Spider {
+func NewSpiderName(name string) *Spider {
 	switch name {
 	case NameOfXici:
-		return &Spider{
-			name: name,
-			urls: buildXiciUrls(),
-			c:    DefaultCrawler{},
-			p:    xiciParser{},
-		}
-	default:
-		return nil
+		return NewSpider(
+			name,
+			Urls(buildXiciUrls()),
+			XPathQuery(`//*[@id="ip_list"]/tbody/tr[@class='odd']/td[2]`),
+		)
 	}
+	return nil
 }
