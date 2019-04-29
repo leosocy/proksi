@@ -13,91 +13,83 @@ import (
 	"github.com/gocolly/colly"
 )
 
-type xmlCallbackContainer struct {
-	Query    string
-	Function func(*colly.XMLElement)
+type spiderCoreParser interface {
+	// Urls 返回spider要爬取的所有url
+	Urls() []string
+	// Query 用于找到爬取的XML中一条代理记录tr(子节点有td存储ip和port)，是一个xpath表达式，
+	// 会注册到OnXML回调
+	Query() string
+	// Parse 用于解析通过Query找到的那条记录中的ip和port，会注册到OnXML的回调
+	Parse(e *colly.XMLElement) (ip, port string)
 }
 
 // Spider provides the instance for crawling jobs.
 type Spider struct {
-	name        string
-	urls        []string
-	xmlCallback xmlCallbackContainer
-	c           *colly.Collector
-	logger      *logrus.Entry
+	name   string
+	parser spiderCoreParser
+	c      *colly.Collector
+	logger *logrus.Logger
 }
 
-// NewSpider creates a new Spider instance with default configuration.
-func NewSpider(name string, urls []string, options ...func(*Spider)) *Spider {
-	s := &Spider{name: name, urls: urls}
-	s.Init()
+func newSpider(name string, parser spiderCoreParser, options ...func(*Spider)) *Spider {
+	s := &Spider{name: name, parser: parser}
+	s.init()
 
 	for _, opt := range options {
 		opt(s)
 	}
 
-	s.RegisterCallbacks()
+	s.registerCallbacks()
 
 	return s
 }
 
-// WrappedXMLCallback wraps the spider's xmlCallbackContainer
-// with a callback which returns the parsed ip and port.
-//
-// The wrapped callback function adds the proxy to the ProxyPool.
-func WrappedXMLCallback(query string,
-	callback func(*colly.XMLElement) (ip, port string)) func(*Spider) {
-	return func(s *Spider) {
-		s.xmlCallback.Query = query
-		s.xmlCallback.Function = func(e *colly.XMLElement) {
-			ip, port := callback(e)
-			fmt.Printf("%s:%s\n", ip, port)
-		}
-	}
-}
-
 // Init initializes the Spider's private variables
 // and sets default configuration for the Spider
-func (s *Spider) Init() {
+func (s *Spider) init() {
 	s.c = colly.NewCollector(
-		colly.Async(true),
+		colly.Async(false),
 		colly.UserAgent(browser.Random()),
+		colly.MaxDepth(1),
 	)
 	s.c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
-		Parallelism: 1,
-		Delay:       5 * time.Second,
+		Parallelism: 1, // avoids detection that I'm a spider
+		Delay:       10 * time.Second,
 	})
 
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-	s.logger = logrus.WithFields(logrus.Fields{
-		"package": "spider",
-		"name":    s.name,
-	})
+	s.logger = logrus.New()
+	s.logger.Formatter = &logrus.TextFormatter{FullTimestamp: true}
 }
 
-// RegisterCallbacks registers some callbacks after option spider.
-func (s *Spider) RegisterCallbacks() {
+// registerCallbacks registers some callbacks after option spider.
+func (s *Spider) registerCallbacks() {
+	entry := s.logger.WithFields(logrus.Fields{
+		"spider-name": s.name,
+	})
+
 	s.c.OnRequest(func(r *colly.Request) {
-		s.logger.Infof("start crawling %s", r.URL)
+		entry.Infof("start crawling %s.", r.URL)
 	})
 
 	s.c.OnResponse(func(r *colly.Response) {
-		s.logger.Infof("crawl %s done", r.Request.URL)
+		entry.Infof("crawl %s done.", r.Request.URL)
 	})
 
-	if s.xmlCallback.Function != nil {
-		s.c.OnXML(s.xmlCallback.Query, s.xmlCallback.Function)
-	}
+	s.c.OnXML(s.parser.Query(), func(e *colly.XMLElement) {
+		ip, port := s.parser.Parse(e)
+		fmt.Printf("%s:%s\n", ip, port)
+	})
 
 	s.c.OnError(func(r *colly.Response, err error) {
-		s.logger.Errorf("crawl %s failed. %v", r.Request.URL, err)
+		fmt.Printf("%s\n", r.Body)
+		entry.Errorf("crawl %s failed. %v", r.Request.URL, err)
 	})
 }
 
 // Crawl traverses urls and visit for each url.
 func (s *Spider) Crawl() {
-	for _, url := range s.urls {
+	for _, url := range s.parser.Urls() {
 		s.c.Visit(url)
 	}
 }
