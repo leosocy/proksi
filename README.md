@@ -15,6 +15,11 @@
 - Storage: 存储Proxy的介质，例如MySQL、Mongo、Redis等等。
 - Service: 提供api，获取可用ip代理。
 
+## 主要用到的开源包
+
+- [colly](https://github.com/gocolly/colly)，用于发起请求，解析响应等等。
+- 
+
 ## 免费代理资源列表
 
 ## 启动

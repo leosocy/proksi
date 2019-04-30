@@ -4,10 +4,24 @@ import (
 	"fmt"
 
 	"github.com/Leosocy/gipp/pkg/proxy"
+	"github.com/Leosocy/gipp/pkg/spider"
 )
 
 func main() {
-	fetcher, _ := proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher)
-	info, _ := fetcher.Do("8.8.8.8")
-	fmt.Printf("%+v", info)
+	proxyChan := make(chan *proxy.Proxy)
+	spiders := make([]*spider.Spider, 0, 16)
+	for _, name := range []string{
+		spider.NameOfHappy,
+	} {
+		spiders = append(spiders, spider.NewSpider(name))
+	}
+	for _, s := range spiders {
+		go s.Crawl()
+	}
+	for {
+		select {
+		case p := <-proxyChan:
+			fmt.Printf("%+v\n", p)
+		}
+	}
 }

@@ -5,17 +5,90 @@
 package spider
 
 import (
-	"github.com/Leosocy/gipp/pkg/proxy"
+	"fmt"
+	"time"
+
+	browser "github.com/EDDYCJY/fake-useragent"
+	"github.com/Sirupsen/logrus"
+	"github.com/gocolly/colly"
 )
 
-// Spider interface of all spiders.
-type Spider interface {
-	Crawl(chan<- *proxy.Proxy)
+type spiderCoreParser interface {
+	// Urls 返回spider要爬取的所有url
+	Urls() []string
+	// Query 用于找到爬取的XML中一条代理记录tr(子节点有td存储ip和port)，是一个xpath表达式，
+	// 会注册到OnXML回调
+	Query() string
+	// Parse 用于解析通过Query找到的那条记录中的ip和port，会注册到OnXML的回调
+	Parse(e *colly.XMLElement) (ip, port string)
 }
 
-// BaseSpider include members required by all spiders.
-type BaseSpider struct {
-	Name    string
-	UrlsFmt []string
-	// logrus.Logger
+// Spider provides the instance for crawling jobs.
+type Spider struct {
+	name   string
+	parser spiderCoreParser
+	c      *colly.Collector
+	logger *logrus.Logger
+}
+
+func newSpider(name string, parser spiderCoreParser, options ...func(*Spider)) *Spider {
+	s := &Spider{name: name, parser: parser}
+	s.init()
+
+	for _, opt := range options {
+		opt(s)
+	}
+
+	s.registerCallbacks()
+
+	return s
+}
+
+// Init initializes the Spider's private variables
+// and sets default configuration for the Spider
+func (s *Spider) init() {
+	s.c = colly.NewCollector(
+		colly.Async(false),
+		colly.UserAgent(browser.Random()),
+		colly.MaxDepth(1),
+	)
+	s.c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 1, // avoids detection that I'm a spider
+		Delay:       10 * time.Second,
+	})
+
+	s.logger = logrus.New()
+	s.logger.Formatter = &logrus.TextFormatter{FullTimestamp: true}
+}
+
+// registerCallbacks registers some callbacks after option spider.
+func (s *Spider) registerCallbacks() {
+	entry := s.logger.WithFields(logrus.Fields{
+		"spider-name": s.name,
+	})
+
+	s.c.OnRequest(func(r *colly.Request) {
+		entry.Infof("start crawling %s.", r.URL)
+	})
+
+	s.c.OnResponse(func(r *colly.Response) {
+		entry.Infof("crawl %s done.", r.Request.URL)
+	})
+
+	s.c.OnXML(s.parser.Query(), func(e *colly.XMLElement) {
+		ip, port := s.parser.Parse(e)
+		fmt.Printf("%s:%s\n", ip, port)
+	})
+
+	s.c.OnError(func(r *colly.Response, err error) {
+		entry.Errorf("crawl %s failed. %v", r.Request.URL, err)
+	})
+}
+
+// Crawl traverses urls and visit for each url.
+func (s *Spider) Crawl() {
+	for _, url := range s.parser.Urls() {
+		s.c.Visit(url)
+	}
 }
