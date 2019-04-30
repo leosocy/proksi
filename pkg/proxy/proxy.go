@@ -53,6 +53,9 @@ type Proxy struct {
 // calculates the other field values,
 // and returns an initialized Proxy object
 func NewProxy(ip, port string) (*Proxy, error) {
+	if ip == "" || port == "" {
+		return nil, errors.New("empty ip or port")
+	}
 	parsedIP := net.ParseIP(strings.TrimSpace(ip))
 	if parsedIP == nil {
 		return nil, errors.New("invalid ip")

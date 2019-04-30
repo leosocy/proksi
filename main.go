@@ -11,7 +11,7 @@ func main() {
 	proxyChan := make(chan *proxy.Proxy)
 	spiders := make([]*spider.Spider, 0, 16)
 	for _, name := range []string{
-		spider.NameOfIphai,
+		spider.NameOfHappy,
 	} {
 		spiders = append(spiders, spider.NewSpider(name))
 	}
