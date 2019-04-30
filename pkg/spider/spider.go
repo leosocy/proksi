@@ -79,6 +79,7 @@ func (s *Spider) registerCallbacks() {
 	s.c.OnXML(s.parser.Query(), func(e *colly.XMLElement) {
 		ip, port := s.parser.Parse(e)
 		fmt.Printf("%s:%s\n", ip, port)
+		poll.PutInitial(ip, port)
 	})
 
 	s.c.OnError(func(r *colly.Response, err error) {
