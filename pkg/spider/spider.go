@@ -82,7 +82,6 @@ func (s *Spider) registerCallbacks() {
 	})
 
 	s.c.OnError(func(r *colly.Response, err error) {
-		fmt.Printf("%s\n", r.Body)
 		entry.Errorf("crawl %s failed. %v", r.Request.URL, err)
 	})
 }
