@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/checker"
-
 	"github.com/Leosocy/gipp/pkg/utils"
 )
 
@@ -41,10 +39,9 @@ type Proxy struct {
 	Port      uint32    `json:"port"`
 	GeoInfo   *GeoInfo  `json:"geo_info"`
 	Anon      Anonymity `json:"anonymity"`
-	HTTPS     bool      `json:"support_https"` // 是否支持访问https网站
-	Latency   uint32    `json:"latency"`       // unit: ms
-	Speed     uint32    `json:"speed"`         // unit: kb/s
-	Score     uint      `json:"score"`         // full is 100
+	Latency   uint32    `json:"latency"` // unit: ms
+	Speed     uint32    `json:"speed"`   // unit: kb/s
+	Score     uint      `json:"score"`   // full is 100
 	CreatedAt time.Time `json:"created_at"`
 	CheckedAt time.Time `json:"checked_at"`
 }
@@ -113,12 +110,6 @@ func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 		}
 	}
 	return
-}
-
-// DetectHTTPSSupported use a `checker.HTTPSUsabilityChecker` to
-// check whether the proxy can access HTTPS sites.
-func (pxy *Proxy) DetectHTTPSSupported(c checker.HTTPSUsabilityChecker) {
-	pxy.HTTPS = c.ProxyHTTPSUsable(pxy.URL())
 }
 
 // DetectLatency TODO: detect proxy lentency by request one website N times,

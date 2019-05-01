@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Leosocy/gipp/pkg/proxy"
+
 	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/Sirupsen/logrus"
 	"github.com/gocolly/colly"
@@ -28,6 +30,7 @@ type Spider struct {
 	name   string
 	parser spiderCoreParser
 	c      *colly.Collector
+	ch     proxy.CachedChan
 	logger *logrus.Logger
 }
 
@@ -78,8 +81,11 @@ func (s *Spider) registerCallbacks() {
 
 	s.c.OnXML(s.parser.Query(), func(e *colly.XMLElement) {
 		ip, port := s.parser.Parse(e)
-		fmt.Printf("%s:%s\n", ip, port)
-		poll.PutInitial(ip, port)
+		if s.ch != nil {
+			s.ch.Send(ip, port)
+		} else {
+			fmt.Printf("%s:%s\n", ip, port)
+		}
 	})
 
 	s.c.OnError(func(r *colly.Response, err error) {
@@ -87,8 +93,10 @@ func (s *Spider) registerCallbacks() {
 	})
 }
 
-// Crawl traverses urls and visit for each url.
-func (s *Spider) Crawl() {
+// CrawlTo traverses urls and visit for
+// each url and send it to cached channel.
+func (s *Spider) CrawlTo(ch proxy.CachedChan) {
+	s.ch = ch
 	for _, url := range s.parser.Urls() {
 		s.c.Visit(url)
 	}

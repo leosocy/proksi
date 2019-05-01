@@ -30,6 +30,18 @@ const (
 	NameOfHappy = "kaixin"
 )
 
+// BuildAndInitAll returns all of the enable spider.
+func BuildAndInitAll() (spiders []*Spider) {
+	for _, name := range []string{
+		NameOfXici, NameOfKuai, NameOfYun,
+		NameOfIphai, NameOfXila, NameOfNima,
+		NameOfEightnine, NameOfHappy,
+	} {
+		spiders = append(spiders, NewSpider(name))
+	}
+	return
+}
+
 // NewSpider creates a new Spider with name and default configurations.
 func NewSpider(name string) *Spider {
 	switch name {
@@ -58,7 +70,7 @@ type xiciSpider struct{}
 
 func (s xiciSpider) Urls() (urls []string) {
 	baseURL := "https://www.xicidaili.com"
-	for page := 1; page <= 10; page++ {
+	for page := 1; page <= 5; page++ {
 		for _, domain := range []string{"nn", "nt", "wn", "wt"} {
 			urls = append(urls, fmt.Sprintf("%s/%s/%d", baseURL, domain, page))
 		}

@@ -3,17 +3,19 @@
 [![Build Status](https://travis-ci.org/Leosocy/gipp.svg?branch=master)](https://travis-ci.org/Leosocy/gipp)
 [![codecov](https://codecov.io/gh/Leosocy/gipp/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/gipp)
 
-通过RESTful API，给其他爬虫程序提供**持久**、**稳定**、**高效**的IP代理。
+通过RESTful API，给其他爬虫程序提供**稳定**、**实时**、**高可用**的HTTP/HTTPS代理。
 
-通过go的高并发，定期爬取大量免费的代理资源，进行质量筛选，并存储到Storage中。
+通过go的高并发，周期性爬取大量免费的代理资源，进行质量筛选，并存储到Storage中。
+
+由于目前大部分网站都会重定向到https，所以如果代理不支持访问HTTPS，对需要使用代理的爬虫程序来说用处就不是很大了。基于这种情况，GIPP **只会提供HTTP/HTTPS均支持** 的代理。并且会定期的对这些代理进行质量检查并打分，从而甄别出质量很高的代理。
 
 ## 组织架构
 
 - Proxy: http(s)代理对象，包括ip, port, geo info, anonymity, latency, speed等属性。
 - Spider: 免费代理资源爬取器, TODO: 从配置文件加载生成
-- Checker: 检验代理质量，包括时延、网速等等。
+- Checker: 检验代理质量，包括时延、网速等等，同时给代理打分。
 - Storage: 存储Proxy的介质，例如MySQL、Mongo、Redis等等。
-- Scheduler: 负责调度Spider,Checker,Checker,Storage之间的合作
+- Scheduler: 负责调度Spider,Checker,Storage之间的合作
 - Service: 提供api，获取可用ip代理。
 
 ## 主要用到的开源包

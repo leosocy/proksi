@@ -72,7 +72,7 @@ func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err 
 		reqURL = httpURLOfHTTPBin
 	}
 	resp, body, errs := gorequest.New().Proxy(proxyURL).
-		Timeout(100 * time.Second).Get(reqURL).EndBytes()
+		Timeout(20 * time.Second).Get(reqURL).EndBytes()
 	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil,
 			fmt.Errorf("Request %s failed, proxy [%s], https [%t]", reqURL, proxyURL, https)
