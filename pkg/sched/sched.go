@@ -7,11 +7,19 @@ package sched
 import (
 	"fmt"
 
+	"github.com/Leosocy/gipp/pkg/checker"
+
 	"github.com/Leosocy/gipp/pkg/utils"
 
 	"github.com/Leosocy/gipp/pkg/proxy"
 	"github.com/Leosocy/gipp/pkg/spider"
 )
+
+type Scheduler struct {
+	spiders      []*spider.Spider
+	cachedChan   *proxy.CachedChan
+	scoreChecker *checker.Scorer
+}
 
 // Start starts a goroutine for each spider and starts
 // crawling the proxy to the specified cached channel.

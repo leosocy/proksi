@@ -10,8 +10,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	"github.com/Leosocy/gipp/pkg/checker"
 )
 
 const (
@@ -182,8 +180,7 @@ func TestHTTPBinUtil_ProxyHTTPSUsable(t *testing.T) {
 			ts := httptest.NewServer(http.HandlerFunc(tt.args.fakeResp))
 			defer ts.Close()
 			httpsURLOfHTTPBin = ts.URL
-			var c checker.HTTPSUsabilityChecker
-			c = HTTPBinUtil{}
+			c := HTTPBinUtil{}
 			if got := c.ProxyHTTPSUsable(""); got != tt.want {
 				t.Errorf("HTTPBinUtil.ProxyHTTPSUsable() = %v, want %v", got, tt.want)
 			}
