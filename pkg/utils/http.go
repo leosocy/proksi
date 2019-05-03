@@ -39,13 +39,13 @@ var (
 // HTTPBinUtil 通过请求`http(s)://httpbin.org`获取并解析请求头
 type HTTPBinUtil struct{}
 
-// GetRequestHeader implements RequestHeadersGetter.GetRequestHeader
-func (u HTTPBinUtil) GetRequestHeader() (headers HTTPRequestHeaders, err error) {
-	return u.GetRequestHeaderUsingProxy("")
+// GetRequestHeaders implements RequestHeadersGetter.GetRequestHeaders
+func (u HTTPBinUtil) GetRequestHeaders() (headers HTTPRequestHeaders, err error) {
+	return u.GetRequestHeadersUsingProxy("")
 }
 
-// GetRequestHeaderUsingProxy implements RequestHeadersGetter.GetRequestHeaderUsingProxy
-func (u HTTPBinUtil) GetRequestHeaderUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
+// GetRequestHeadersUsingProxy implements RequestHeadersGetter.GetRequestHeaderUsingProxy
+func (u HTTPBinUtil) GetRequestHeadersUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
 	if body, err := u.makeRequest(proxyURL, false); err == nil {
 		return u.unmarshal(body)
 	}

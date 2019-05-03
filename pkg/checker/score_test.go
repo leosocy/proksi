@@ -19,7 +19,8 @@ import (
 func TestNewBatchHTTPSScorer(t *testing.T) {
 	defer func() {
 		r := recover()
-		assert.EqualError(t, r.(error), "size of hosts can't be smaller than 2")
+		r, ok := r.(error)
+		assert.True(t, ok)
 	}()
 	s := NewBatchHTTPSScorer([]string{"www.test.com", "www.test.com"})
 	assert.Equal(t, 100*time.Second, s.(*BatchHTTPSScorer).timeout)

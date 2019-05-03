@@ -24,7 +24,7 @@ func NewBloomCachedChan() CachedChan {
 	}
 	return &BloomCachedChan{
 		entryBf: bf,
-		c:       make(chan *Proxy, 1024),
+		ch:      make(chan *Proxy, 1024),
 	}
 }
 
@@ -35,7 +35,7 @@ type BloomCachedChan struct {
 	// whether the proxy has been added to the queue.
 	entryBf *bloomfilter.Filter
 	// q transports proxies that crawled by spiders.
-	c chan *Proxy
+	ch chan *Proxy
 }
 
 func (cc *BloomCachedChan) Send(ip, port string) {
@@ -44,11 +44,11 @@ func (cc *BloomCachedChan) Send(ip, port string) {
 		if _, err := hasher.Write(pxy.IP); err == nil &&
 			!cc.entryBf.Contains(hasher) {
 			cc.entryBf.Add(hasher)
-			cc.c <- pxy
+			cc.ch <- pxy
 		}
 	}
 }
 
 func (cc *BloomCachedChan) Recv() <-chan *Proxy {
-	return cc.c
+	return cc.ch
 }

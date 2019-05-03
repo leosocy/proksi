@@ -125,24 +125,23 @@ func (p *Proxy) DetectLatency() {
 func (p *Proxy) DetectSpeed() {
 }
 
-// ChangeScore adds delta to proxy's score.
-func (p *Proxy) ChangeScore(delta int8) {
+// AddScore adds delta to proxy's score.
+func (p *Proxy) AddScore(delta int8) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	if delta > 0 {
 		if p.Score > MaximumScore-delta {
 			p.Score = MaximumScore
-		} else {
-			p.Score += delta
+			return
 		}
 	} else {
 		if p.Score < -delta {
 			p.Score = 0
-		} else {
-			p.Score += delta
+			return
 		}
 	}
+	p.Score += delta
 }
 
 // URL returns string like `ip:port`

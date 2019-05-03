@@ -18,7 +18,7 @@ import (
 // Scorer is the interface used to score a proxy.
 type Scorer interface {
 	// Score calculates the proxy's score.
-	Score(pxy *proxy.Proxy)
+	Score(pxy *proxy.Proxy) int8
 }
 
 // BatchHTTPSScorer try visiting a batch of HTTPS websites
@@ -30,28 +30,32 @@ type BatchHTTPSScorer struct {
 
 // NewBatchHTTPSScorer returns a new scorer, the hosts can't be empty or bigger than maximum score.
 // The timeout is calculated by the length of hosts.
-// If all host try failed, the proxy score will be reduced to 0
+// If response time smaller than timeout/2, score increase by (timeout/2 - RT)
+// else score decrease by (RT - timeout/2).
+// So, if all host try failed, the proxy score will be reduced to 0
 func NewBatchHTTPSScorer(hosts []string) Scorer {
-	hl := int8(len(hosts))
-	if hl < 2 {
-		panic(errors.New("size of hosts can't be smaller than 2"))
+	if len(hosts) < 2 {
+		panic(errors.New("length of hosts must be bigger than 2"))
 	}
+	// Ceil to make sure that the score is reduced to 0 when all try fails.
+	avg := math.Ceil(float64(proxy.MaximumScore) / float64(len(hosts)))
 	return &BatchHTTPSScorer{
 		hosts:   hosts,
-		timeout: time.Duration(proxy.MaximumScore/hl*2) * time.Second,
+		timeout: time.Duration(avg*2) * time.Second,
 	}
 }
 
 // Score try to use proxy visit each host, and modifies
 // the corresponding proxy score based on the return value .
-func (s *BatchHTTPSScorer) Score(pxy *proxy.Proxy) {
-	// since we don't try diff host parallel, so init request here will reduce mem.
+func (s *BatchHTTPSScorer) Score(pxy *proxy.Proxy) int8 {
+	// since we don't try diff host parallel, so init request here to reduce mem cost.
 	sa := gorequest.New().Proxy(pxy.URL()).Timeout(s.timeout)
 	for _, host := range s.hosts {
 		rt, _ := s.try(sa, host)
-		delta := s.timeout.Seconds()/2 - rt.Seconds()
-		pxy.ChangeScore(int8(math.Ceil(delta)))
+		delta := (s.timeout/2 - rt).Seconds()
+		pxy.AddScore(int8(math.Floor(delta)))
 	}
+	return pxy.Score
 }
 
 // do requests to host with proxy and timeout, then calculate the response time.

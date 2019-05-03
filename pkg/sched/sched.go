@@ -6,10 +6,11 @@ package sched
 
 import (
 	"fmt"
-
-	"github.com/Leosocy/gipp/pkg/checker"
+	"sync"
 
 	"github.com/Leosocy/gipp/pkg/utils"
+
+	"github.com/Leosocy/gipp/pkg/checker"
 
 	"github.com/Leosocy/gipp/pkg/proxy"
 	"github.com/Leosocy/gipp/pkg/spider"
@@ -17,31 +18,71 @@ import (
 
 type Scheduler struct {
 	spiders      []*spider.Spider
-	cachedChan   *proxy.CachedChan
-	scoreChecker *checker.Scorer
+	cachedChan   proxy.CachedChan
+	scoreChecker checker.Scorer
 }
 
-// Start starts a goroutine for each spider and starts
-// crawling the proxy to the specified cached channel.
+// NewScheduler returns a new scheduler instance with default configuration.
+func NewScheduler() *Scheduler {
+	return &Scheduler{
+		spiders:      spider.BuildAndInitAll(),
+		cachedChan:   proxy.NewBloomCachedChan(),
+		scoreChecker: checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
+	}
+}
+
+// Start starts one goroutine for each spider
+// and crawls the proxy to the specified cached channel.
 // Receives the proxy in the channel, use the checker
 // to score it in a round, and then store it in the specified storage.
-func Start() {
-	totalCount := 0
-	ch := proxy.NewBloomCachedChan()
-	spiders := spider.BuildAndInitAll()
-	for _, s := range spiders {
-		go s.CrawlTo(ch)
+func (sc *Scheduler) Start() {
+	for _, s := range sc.spiders {
+		go s.CrawlTo(sc.cachedChan)
 	}
-	checker := utils.HTTPBinUtil{}
+	sc.loopRecv()
+}
+
+func (sc *Scheduler) loopRecv() {
+	recvCh := sc.cachedChan.Recv()
 	for {
 		select {
-		case pxy := <-ch.Recv():
-			totalCount++
-			go func() {
-				if checker.ProxyHTTPSUsable(pxy.URL()) {
-					fmt.Printf("%d\t%+v\n", totalCount, pxy)
-				}
-			}()
+		case pxy := <-recvCh:
+			go sc.handleProxy(pxy)
 		}
 	}
+}
+
+func (sc *Scheduler) handleProxy(pxy *proxy.Proxy) {
+	score := sc.scoreChecker.Score(pxy)
+	if score > 0 {
+		sc.doDetections(pxy)
+		sc.doSave(pxy)
+	}
+}
+
+func (sc *Scheduler) doDetections(pxy *proxy.Proxy) {
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		pxy.DetectAnonymity(utils.HTTPBinUtil{})
+	}()
+	go func() {
+		defer wg.Done()
+		pxy.DetectGeoInfo(proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher))
+	}()
+	go func() {
+		defer wg.Done()
+		pxy.DetectLatency()
+	}()
+	go func() {
+		defer wg.Done()
+		pxy.DetectSpeed()
+	}()
+	wg.Wait()
+}
+
+func (sc *Scheduler) doSave(pxy *proxy.Proxy) {
+	// TODO: storage.CreateOrUpdate(pxy)
+	fmt.Printf("%+v\n", pxy)
 }

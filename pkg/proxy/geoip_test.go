@@ -117,33 +117,26 @@ func TestNewGeoInfoFetcher(t *testing.T) {
 		name string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantF   bool
-		wantErr bool
+		name  string
+		args  args
+		wantF bool
 	}{
 		{
-			name:    "ValidName",
-			args:    args{name: NameOfIPAPIFetcher},
-			wantF:   true,
-			wantErr: false,
+			name:  "ValidName",
+			args:  args{name: NameOfIPAPIFetcher},
+			wantF: true,
 		},
 		{
-			name:    "InvalidName",
-			args:    args{name: "unknown"},
-			wantF:   false,
-			wantErr: true,
+			name:  "InvalidName",
+			args:  args{name: "unknown"},
+			wantF: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotF, err := NewGeoInfoFetcher(tt.args.name)
+			gotF := NewGeoInfoFetcher(tt.args.name)
 			if (gotF != nil) != tt.wantF {
 				t.Errorf("NewGeoInfoFetcher() F = %v, wantF %v", gotF, tt.wantF)
-				return
-			}
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewGeoInfoFetcher() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 		})

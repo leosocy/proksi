@@ -72,7 +72,7 @@ func TestHTTPBinUtil_GetRequestHeaderUsingProxy(t *testing.T) {
 			}))
 			defer ts.Close()
 			httpURLOfHTTPBin = ts.URL
-			gotHeaders, err := HTTPBinUtil{}.GetRequestHeaderUsingProxy(tt.args.proxyURL)
+			gotHeaders, err := HTTPBinUtil{}.GetRequestHeadersUsingProxy(tt.args.proxyURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HTTPBinUtil.GetRequestHeaderUsingProxy() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -146,7 +146,7 @@ func BenchmarkHTTPBinIPTool_GetRequestHeaderUsingProxy(b *testing.B) {
 	defer ts.Close()
 	httpURLOfHTTPBin = ts.URL
 	for i := 0; i < b.N; i++ {
-		HTTPBinUtil{}.GetRequestHeaderUsingProxy("")
+		HTTPBinUtil{}.GetRequestHeadersUsingProxy("")
 	}
 }
 
