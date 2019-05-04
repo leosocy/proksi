@@ -29,12 +29,12 @@ func NewBloomCachedChan() CachedChan {
 }
 
 // BloomCachedChan excludes proxy that are already sent to channel
-// by placing a bloom filter in front of the queue.
+// by placing a bloom filter in front of the channel.
 type BloomCachedChan struct {
 	// entryBf is a bloomfilter that determines
-	// whether the proxy has been added to the queue.
+	// whether the proxy has been added to the channel.
 	entryBf *bloomfilter.Filter
-	// q transports proxies that crawled by spiders.
+	// ch transports proxies that crawled by spiders.
 	ch chan *Proxy
 }
 
@@ -43,6 +43,8 @@ func (cc *BloomCachedChan) Send(ip, port string) {
 		hasher := fnv.New64()
 		if _, err := hasher.Write(pxy.IP); err == nil &&
 			!cc.entryBf.Contains(hasher) {
+			// first add it to filter, since send to
+			// channel will block current goroutine.
 			cc.entryBf.Add(hasher)
 			cc.ch <- pxy
 		}

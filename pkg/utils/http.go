@@ -52,18 +52,6 @@ func (u HTTPBinUtil) GetRequestHeadersUsingProxy(proxyURL string) (headers HTTPR
 	return
 }
 
-// ProxyUsable implements checker.UsabilityChecker
-func (u HTTPBinUtil) ProxyUsable(proxyURL string) bool {
-	_, err := u.makeRequest(proxyURL, false)
-	return err == nil
-}
-
-// ProxyHTTPSUsable implements checker.HTTPSUsabilityChecker
-func (u HTTPBinUtil) ProxyHTTPSUsable(proxyURL string) bool {
-	_, err := u.makeRequest(proxyURL, true)
-	return err == nil
-}
-
 func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err error) {
 	var reqURL string
 	if https {

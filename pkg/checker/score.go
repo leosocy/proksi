@@ -28,10 +28,12 @@ type BatchHTTPSScorer struct {
 	timeout time.Duration
 }
 
-// NewBatchHTTPSScorer returns a new scorer, the hosts can't be empty or bigger than maximum score.
+// NewBatchHTTPSScorer returns a new scorer,
+// the hosts can't be empty or bigger than maximum score.
 // The timeout is calculated by the length of hosts.
-// If response time smaller than timeout/2, score increase by (timeout/2 - RT)
-// else score decrease by (RT - timeout/2).
+// If response time smaller than timeout/2,
+// score increments by (timeout/2 - RT)
+// else score decrements by (RT - timeout/2).
 // So, if all host try failed, the proxy score will be reduced to 0
 func NewBatchHTTPSScorer(hosts []string) Scorer {
 	if len(hosts) < 2 {

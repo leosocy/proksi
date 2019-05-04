@@ -17,17 +17,21 @@ import (
 )
 
 type Scheduler struct {
-	spiders      []*spider.Spider
-	cachedChan   proxy.CachedChan
-	scoreChecker checker.Scorer
+	spiders          []*spider.Spider
+	cachedChan       proxy.CachedChan
+	scoreChecker     checker.Scorer
+	reqHeadersGetter utils.RequestHeadersGetter
+	geoInfoFetcher   proxy.GeoInfoFetcher
 }
 
 // NewScheduler returns a new scheduler instance with default configuration.
 func NewScheduler() *Scheduler {
 	return &Scheduler{
-		spiders:      spider.BuildAndInitAll(),
-		cachedChan:   proxy.NewBloomCachedChan(),
-		scoreChecker: checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
+		spiders:          spider.BuildAndInitAll(),
+		cachedChan:       proxy.NewBloomCachedChan(),
+		scoreChecker:     checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
+		reqHeadersGetter: utils.HTTPBinUtil{},
+		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
 	}
 }
 
@@ -47,6 +51,7 @@ func (sc *Scheduler) loopRecv() {
 	for {
 		select {
 		case pxy := <-recvCh:
+			// TODO: 控制处理速率，以防带宽不足导致失真
 			go sc.handleProxy(pxy)
 		}
 	}
@@ -65,11 +70,11 @@ func (sc *Scheduler) doDetections(pxy *proxy.Proxy) {
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
-		pxy.DetectAnonymity(utils.HTTPBinUtil{})
+		pxy.DetectAnonymity(sc.reqHeadersGetter)
 	}()
 	go func() {
 		defer wg.Done()
-		pxy.DetectGeoInfo(proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher))
+		pxy.DetectGeoInfo(sc.geoInfoFetcher)
 	}()
 	go func() {
 		defer wg.Done()

@@ -107,6 +107,7 @@ func (f *baseFetcher) unmarshal(body []byte) (info *GeoInfo, err error) {
 // ipAPIFetcher see document: `http://www.ip-api.com/docs/api:json`
 type ipAPIFetcher struct {
 	baseFetcher
+	// TODO: rate limit with (150 times/min)
 }
 
 func (f *ipAPIFetcher) init() {
