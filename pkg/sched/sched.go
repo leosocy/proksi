@@ -7,6 +7,7 @@ package sched
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/Leosocy/gipp/pkg/utils"
 
@@ -16,12 +17,14 @@ import (
 	"github.com/Leosocy/gipp/pkg/spider"
 )
 
+// Scheduler responsible for scheduling cooperation between Spider,Checker and Storage.
 type Scheduler struct {
 	spiders          []*spider.Spider
 	cachedChan       proxy.CachedChan
 	scoreChecker     checker.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geoInfoFetcher   proxy.GeoInfoFetcher
+	limiter          *LimitRule
 }
 
 // NewScheduler returns a new scheduler instance with default configuration.
@@ -33,6 +36,12 @@ func NewScheduler() *Scheduler {
 		reqHeadersGetter: utils.HTTPBinUtil{},
 		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
 	}
+}
+
+// RateLimit set a new LimitRule to the scheduler.
+func (sc *Scheduler) RateLimit(r *LimitRule) error {
+	sc.limiter = r
+	return r.Init()
 }
 
 // Start starts one goroutine for each spider
@@ -51,31 +60,39 @@ func (sc *Scheduler) loopRecv() {
 	for {
 		select {
 		case pxy := <-recvCh:
-			// TODO: 控制处理速率，以防带宽不足导致失真
-			go sc.handleProxy(pxy)
+			go sc.procProxy(pxy)
 		}
 	}
 }
 
-func (sc *Scheduler) handleProxy(pxy *proxy.Proxy) {
+func (sc *Scheduler) procProxy(pxy *proxy.Proxy) {
+	if sc.limiter != nil {
+		sc.limiter.waitChan <- struct{}{}
+		defer func() {
+			time.Sleep(sc.limiter.Delay)
+			<-sc.limiter.waitChan
+		}()
+	}
 	score := sc.scoreChecker.Score(pxy)
 	if score > 0 {
-		sc.doDetections(pxy)
+		sc.doDetect(pxy)
 		sc.doSave(pxy)
 	}
 }
 
-func (sc *Scheduler) doDetections(pxy *proxy.Proxy) {
+// TODO: scheduler只负责质量检查，对于合格的proxy，写入storage后，由一个后台线程定期从中取出记录
+// 如果anonymity/GeoInfo 为空则补全，另外会无条件detect speed/latency。
+func (sc *Scheduler) doDetect(pxy *proxy.Proxy) {
 	var wg sync.WaitGroup
-	wg.Add(4)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		pxy.DetectAnonymity(sc.reqHeadersGetter)
 	}()
-	go func() {
-		defer wg.Done()
-		pxy.DetectGeoInfo(sc.geoInfoFetcher)
-	}()
+	// go func() {
+	// 	defer wg.Done()
+	// 	pxy.DetectGeoInfo(sc.geoInfoFetcher)
+	// }()
 	go func() {
 		defer wg.Done()
 		pxy.DetectLatency()
