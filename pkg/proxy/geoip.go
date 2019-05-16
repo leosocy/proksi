@@ -47,14 +47,14 @@ type GeoInfoFetcher interface {
 }
 
 // NewGeoInfoFetcher returns a fetcher for name.
-func NewGeoInfoFetcher(name string) (f GeoInfoFetcher, err error) {
+func NewGeoInfoFetcher(name string) (f GeoInfoFetcher) {
 	switch name {
 	case NameOfIPAPIFetcher:
 		f = &ipAPIFetcher{
 			baseFetcher{tagName: "ip-api-json", baseURL: "http://ip-api.com"},
 		}
 	default:
-		return f, fmt.Errorf("geo info fetcher name not support")
+		return nil
 	}
 	f.init()
 	return
@@ -107,6 +107,7 @@ func (f *baseFetcher) unmarshal(body []byte) (info *GeoInfo, err error) {
 // ipAPIFetcher see document: `http://www.ip-api.com/docs/api:json`
 type ipAPIFetcher struct {
 	baseFetcher
+	// TODO: rate limit with (150 times/min)
 }
 
 func (f *ipAPIFetcher) init() {

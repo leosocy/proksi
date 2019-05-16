@@ -10,8 +10,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	"github.com/Leosocy/gipp/pkg/checker"
 )
 
 const (
@@ -74,7 +72,7 @@ func TestHTTPBinUtil_GetRequestHeaderUsingProxy(t *testing.T) {
 			}))
 			defer ts.Close()
 			httpURLOfHTTPBin = ts.URL
-			gotHeaders, err := HTTPBinUtil{}.GetRequestHeaderUsingProxy(tt.args.proxyURL)
+			gotHeaders, err := HTTPBinUtil{}.GetRequestHeadersUsingProxy(tt.args.proxyURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HTTPBinUtil.GetRequestHeaderUsingProxy() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -148,45 +146,6 @@ func BenchmarkHTTPBinIPTool_GetRequestHeaderUsingProxy(b *testing.B) {
 	defer ts.Close()
 	httpURLOfHTTPBin = ts.URL
 	for i := 0; i < b.N; i++ {
-		HTTPBinUtil{}.GetRequestHeaderUsingProxy("")
-	}
-}
-
-func TestHTTPBinUtil_ProxyHTTPSUsable(t *testing.T) {
-	type args struct {
-		fakeResp http.HandlerFunc
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "RequestOk",
-			args: args{fakeResp: func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(""))
-			}},
-			want: true,
-		},
-		{
-			name: "RequestFail",
-			args: args{fakeResp: func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusTooManyRequests)
-				w.Write([]byte(""))
-			}},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ts := httptest.NewServer(http.HandlerFunc(tt.args.fakeResp))
-			defer ts.Close()
-			httpsURLOfHTTPBin = ts.URL
-			var c checker.HTTPSUsabilityChecker
-			c = HTTPBinUtil{}
-			if got := c.ProxyHTTPSUsable(""); got != tt.want {
-				t.Errorf("HTTPBinUtil.ProxyHTTPSUsable() = %v, want %v", got, tt.want)
-			}
-		})
+		HTTPBinUtil{}.GetRequestHeadersUsingProxy("")
 	}
 }

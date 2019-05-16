@@ -39,29 +39,17 @@ var (
 // HTTPBinUtil 通过请求`http(s)://httpbin.org`获取并解析请求头
 type HTTPBinUtil struct{}
 
-// GetRequestHeader implements RequestHeadersGetter.GetRequestHeader
-func (u HTTPBinUtil) GetRequestHeader() (headers HTTPRequestHeaders, err error) {
-	return u.GetRequestHeaderUsingProxy("")
+// GetRequestHeaders implements RequestHeadersGetter.GetRequestHeaders
+func (u HTTPBinUtil) GetRequestHeaders() (headers HTTPRequestHeaders, err error) {
+	return u.GetRequestHeadersUsingProxy("")
 }
 
-// GetRequestHeaderUsingProxy implements RequestHeadersGetter.GetRequestHeaderUsingProxy
-func (u HTTPBinUtil) GetRequestHeaderUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
+// GetRequestHeadersUsingProxy implements RequestHeadersGetter.GetRequestHeaderUsingProxy
+func (u HTTPBinUtil) GetRequestHeadersUsingProxy(proxyURL string) (headers HTTPRequestHeaders, err error) {
 	if body, err := u.makeRequest(proxyURL, false); err == nil {
 		return u.unmarshal(body)
 	}
 	return
-}
-
-// ProxyUsable implements checker.UsabilityChecker
-func (u HTTPBinUtil) ProxyUsable(proxyURL string) bool {
-	_, err := u.makeRequest(proxyURL, false)
-	return err == nil
-}
-
-// ProxyHTTPSUsable implements checker.HTTPSUsabilityChecker
-func (u HTTPBinUtil) ProxyHTTPSUsable(proxyURL string) bool {
-	_, err := u.makeRequest(proxyURL, true)
-	return err == nil
 }
 
 func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err error) {
@@ -72,7 +60,7 @@ func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err 
 		reqURL = httpURLOfHTTPBin
 	}
 	resp, body, errs := gorequest.New().Proxy(proxyURL).
-		Timeout(100 * time.Second).Get(reqURL).EndBytes()
+		Timeout(20 * time.Second).Get(reqURL).EndBytes()
 	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil,
 			fmt.Errorf("Request %s failed, proxy [%s], https [%t]", reqURL, proxyURL, https)

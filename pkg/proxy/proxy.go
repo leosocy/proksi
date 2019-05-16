@@ -10,9 +10,8 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
-
-	"github.com/Leosocy/gipp/pkg/checker"
 
 	"github.com/Leosocy/gipp/pkg/utils"
 )
@@ -31,8 +30,9 @@ const (
 	// Anonymous 普通匿名(较为少见)：服务器知道你使用了代理，但是查不到原始IP
 	Anonymous Anonymity = 2
 	// Elite 高级匿名：服务器不知道你使用了代理
-	Elite             Anonymity = 3 // 高匿名
-	proxyScoreMaximum uint      = 100
+	Elite Anonymity = 3 // 高匿名
+	// MaximumScore 代理最大得分
+	MaximumScore int8 = 100
 )
 
 // Proxy IP Proxy data model.
@@ -41,12 +41,12 @@ type Proxy struct {
 	Port      uint32    `json:"port"`
 	GeoInfo   *GeoInfo  `json:"geo_info"`
 	Anon      Anonymity `json:"anonymity"`
-	HTTPS     bool      `json:"support_https"` // 是否支持访问https网站
-	Latency   uint32    `json:"latency"`       // unit: ms
-	Speed     uint32    `json:"speed"`         // unit: kb/s
-	Score     uint      `json:"score"`         // full is 100
+	Latency   uint32    `json:"latency"` // unit: ms
+	Speed     uint32    `json:"speed"`   // unit: kb/s
+	Score     int8      `json:"score"`   // [0-100]
 	CreatedAt time.Time `json:"created_at"`
 	CheckedAt time.Time `json:"checked_at"`
+	lock      sync.RWMutex
 }
 
 // NewProxy passes in the ip, port,
@@ -67,15 +67,15 @@ func NewProxy(ip, port string) (*Proxy, error) {
 	return &Proxy{
 		IP:        parsedIP,
 		Port:      uint32(parsedPort),
-		Score:     proxyScoreMaximum,
+		Score:     MaximumScore,
 		CreatedAt: time.Now(),
 		CheckedAt: time.Now(),
 	}, nil
 }
 
 // DetectGeoInfo set the GeoInfo field value by calling `NewGeoInfo`
-func (pxy *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
-	pxy.GeoInfo, err = f.Do(pxy.IP.String())
+func (p *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
+	p.GeoInfo, err = f.Do(p.IP.String())
 	return
 }
 
@@ -86,7 +86,7 @@ func (pxy *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
 // If `X-Real-Ip` is not equal to the public ip,
 // and `Via` field exists, the anonymity is `Anonymous`.
 // Otherwise, the anonymity is `Elite`.
-func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
+func (p *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 	var (
 		headers, headersUsingProxy   utils.HTTPRequestHeaders
 		publicIP, publicIPUsingProxy net.IP
@@ -97,41 +97,57 @@ func (pxy *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 	if publicIP, err = headers.ParsePublicIP(); err != nil {
 		return
 	}
-	if headersUsingProxy, err = g.GetRequestHeadersUsingProxy(pxy.URL()); err != nil {
+	if headersUsingProxy, err = g.GetRequestHeadersUsingProxy(p.URL()); err != nil {
 		return
 	}
 	if publicIPUsingProxy, err = headersUsingProxy.ParsePublicIP(); err != nil {
 		return
 	}
 	if publicIP.Equal(publicIPUsingProxy) {
-		pxy.Anon = Transparent
+		p.Anon = Transparent
 	} else {
 		if headersUsingProxy.Via != "" {
-			pxy.Anon = Anonymous
+			p.Anon = Anonymous
 		} else {
-			pxy.Anon = Elite
+			p.Anon = Elite
 		}
 	}
 	return
 }
 
-// DetectHTTPSSupported use a `checker.HTTPSUsabilityChecker` to
-// check whether the proxy can access HTTPS sites.
-func (pxy *Proxy) DetectHTTPSSupported(c checker.HTTPSUsabilityChecker) {
-	pxy.HTTPS = c.ProxyHTTPSUsable(pxy.URL())
-}
-
 // DetectLatency TODO: detect proxy lentency by request one website N times,
 // and calculate average response time.
-func (pxy *Proxy) DetectLatency() {
+func (p *Proxy) DetectLatency() {
 }
 
 // DetectSpeed TODO: detect proxy speed by download a large file,
 // and calculate speed `kb_of_file_size / download_cost_time = n kb/s`
-func (pxy *Proxy) DetectSpeed() {
+func (p *Proxy) DetectSpeed() {
+}
+
+// AddScore adds delta to proxy's score.
+func (p *Proxy) AddScore(delta int8) {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	if delta > 0 {
+		if p.Score > MaximumScore-delta {
+			p.Score = MaximumScore
+			return
+		}
+	} else {
+		if p.Score < -delta {
+			p.Score = 0
+			return
+		}
+	}
+	p.Score += delta
 }
 
 // URL returns string like `ip:port`
-func (pxy *Proxy) URL() string {
-	return fmt.Sprintf("http://%s:%d", pxy.IP.String(), pxy.Port)
+func (p *Proxy) URL() string {
+	if len(p.IP) == 0 || p.Port == 0 {
+		return ""
+	}
+	return fmt.Sprintf("http://%s:%d", p.IP.String(), p.Port)
 }
