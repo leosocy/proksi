@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/utils"
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 
-	"github.com/Leosocy/gipp/pkg/checker"
+	"github.com/Leosocy/IntelliProxy/pkg/checker"
 
-	"github.com/Leosocy/gipp/pkg/proxy"
-	"github.com/Leosocy/gipp/pkg/spider"
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/spider"
 )
 
 // Scheduler responsible for scheduling cooperation between Spider,Checker and Storage.

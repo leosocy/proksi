@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 
 	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/Sirupsen/logrus"

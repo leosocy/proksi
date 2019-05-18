@@ -4,14 +4,26 @@
 
 package storage
 
-import "github.com/Leosocy/gipp/pkg/proxy"
+import (
+	"errors"
+	"net"
+
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+)
+
+var (
+	ErrProxyInvalid    = errors.New("proxy is nil or score <= 0")
+	ErrProxyDuplicated = errors.New("proxy is already in storage")
+)
 
 type QueryCondition struct {
 }
 
 type Storage interface {
 	Insert(pxy *proxy.Proxy) error
-	Update(pxy *proxy.Proxy) error
-	Delete(pxy *proxy.Proxy) error
-	Query(cond QueryCondition) ([]*proxy.Proxy, error)
+	Search(ip net.IP) *proxy.Proxy
+	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
+	// Update(pxy *proxy.Proxy) error
+	// Delete(pxy *proxy.Proxy) error
+	Len() uint
 }

@@ -2,15 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Leosocy/gipp/version"
+
+	"github.com/Leosocy/IntelliProxy/version"
 	"github.com/spf13/cobra"
 )
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of gipp",
-	Long:  `All software has versions. This is gipp`,
+	Short: "Print the version number of intelliproxy",
+	Long:  `All software has versions. This is intelliproxy`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Build Date:", version.BuildDate)
 		fmt.Println("Git Commit:", version.GitCommit)

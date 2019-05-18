@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Leosocy/gipp/pkg/sched"
+	"github.com/Leosocy/IntelliProxy/pkg/sched"
 )
 
 func main() {

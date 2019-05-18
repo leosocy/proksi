@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Leosocy/gipp/mocks"
-	"github.com/Leosocy/gipp/pkg/utils"
+	"github.com/Leosocy/IntelliProxy/mocks"
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

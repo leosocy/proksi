@@ -3,7 +3,7 @@ package log
 import (
 	"os"
 
-	"github.com/Leosocy/gipp/config"
+	"github.com/Leosocy/IntelliProxy/config"
 	"github.com/Sirupsen/logrus"
 )
 
