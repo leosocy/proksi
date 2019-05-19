@@ -21,10 +21,11 @@ type QueryCondition struct {
 }
 
 type Storage interface {
-	Insert(pxy *proxy.Proxy) error
+	Insert(p *proxy.Proxy) error
+	Update(newP *proxy.Proxy) error
 	Search(ip net.IP) *proxy.Proxy
-	Update(pxy *proxy.Proxy) error
-	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
-	// Delete(pxy *proxy.Proxy) error
+	Delete(ip net.IP) error
+	Best() *proxy.Proxy
 	Len() uint
+	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
 }

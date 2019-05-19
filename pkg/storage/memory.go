@@ -20,6 +20,9 @@ type compareableProxy struct {
 // Less implements rbtree.Less method.
 func (p *compareableProxy) Less(than rbtree.Item) bool {
 	thanP := than.(*compareableProxy)
+	if p.pxy.IP.Equal(thanP.pxy.IP) {
+		return false
+	}
 	return p.pxy.Score <= thanP.pxy.Score
 }
 
@@ -38,23 +41,23 @@ func NewInMemoryStorage() *InMemoryStorage {
 	}
 }
 
-func (s *InMemoryStorage) insert(pxy *proxy.Proxy) {
+func (s *InMemoryStorage) insert(p *proxy.Proxy) {
 	hasher := fnv.New64()
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.rbt.Insert(&compareableProxy{pxy: pxy})
-	hasher.Write(pxy.IP)
-	s.m[hasher.Sum64()] = pxy
+	s.rbt.Insert(&compareableProxy{pxy: p})
+	hasher.Write(p.IP)
+	s.m[hasher.Sum64()] = p
 }
 
-func (s *InMemoryStorage) Insert(pxy *proxy.Proxy) error {
-	if pxy == nil || pxy.Score <= 0 {
+func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
+	if p == nil || p.Score <= 0 {
 		return ErrProxyInvalid
 	}
-	if sp := s.Search(pxy.IP); sp != nil {
+	if sp := s.Search(p.IP); sp != nil {
 		return ErrProxyDuplicated
 	}
-	s.insert(pxy)
+	s.insert(p)
 	return nil
 }
 
@@ -68,8 +71,38 @@ func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
 	return nil
 }
 
-func (s *InMemoryStorage) Update(pxy *proxy.Proxy) error {
+func (s *InMemoryStorage) delete(p *proxy.Proxy) {
+	hasher := fnv.New64()
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.rbt.Delete(&compareableProxy{pxy: p})
+	hasher.Write(p.IP)
+	delete(s.m, hasher.Sum64())
+}
+
+func (s *InMemoryStorage) Delete(ip net.IP) error {
+	var sp *proxy.Proxy
+	if sp = s.Search(ip); sp == nil {
+		return ErrProxyDoesNotExists
+	}
+	s.delete(sp)
 	return nil
+}
+
+// Update implements storage.Update.
+func (s *InMemoryStorage) Update(newP *proxy.Proxy) error {
+	if err := s.Delete(newP.IP); err != nil {
+		return err
+	}
+	return s.Insert(newP)
+}
+
+func (s *InMemoryStorage) Best() *proxy.Proxy {
+	item := s.rbt.Max()
+	if item == nil {
+		return nil
+	}
+	return item.(*compareableProxy).pxy
 }
 
 func (s *InMemoryStorage) Len() uint {

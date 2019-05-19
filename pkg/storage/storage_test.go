@@ -49,3 +49,55 @@ func TestSearch(t *testing.T) {
 		assert.Nil(pxy)
 	}
 }
+
+func TestDelete(t *testing.T) {
+	assert := assert.New(t)
+	for _, s := range testStorages {
+		p := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 100}
+		s.Insert(p)
+		// does not exists
+		err := s.Delete(net.ParseIP("8.8.8.8"))
+		assert.Equal(err, ErrProxyDoesNotExists)
+		// normal
+		err = s.Delete(p.IP)
+		searchP := s.Search(p.IP)
+		assert.Nil(err)
+		assert.Nil(searchP)
+		assert.Equal(uint(0), s.Len())
+	}
+}
+
+func TestBest(t *testing.T) {
+	assert := assert.New(t)
+	for _, s := range testStorages {
+		// empty
+		bp := s.Best()
+		assert.Nil(bp)
+		// normal
+		p1 := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
+		p2 := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80}
+		s.Insert(p1)
+		s.Insert(p2)
+		bp = s.Best()
+		assert.Equal(p2.IP, bp.IP)
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	assert := assert.New(t)
+	for _, s := range testStorages {
+		p1 := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
+		p2 := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80}
+		s.Insert(p1)
+		s.Insert(p2)
+		// does not exists
+		err := s.Update(&proxy.Proxy{IP: net.ParseIP("6.7.8.9"), Port: 80, Score: 50})
+		assert.Equal(err, ErrProxyDoesNotExists)
+		// normal
+		p1.Score = 90
+		err = s.Update(p1)
+		bp := s.Best()
+		assert.Nil(err)
+		assert.Equal(p1.IP, bp.IP)
+	}
+}
