@@ -68,6 +68,10 @@ func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
 	return nil
 }
 
+func (s *InMemoryStorage) Update(pxy *proxy.Proxy) error {
+	return nil
+}
+
 func (s *InMemoryStorage) Len() uint {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

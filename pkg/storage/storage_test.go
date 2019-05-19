@@ -37,3 +37,15 @@ func TestInsert(t *testing.T) {
 		assert.Equal(uint(2), s.Len())
 	}
 }
+
+func TestSearch(t *testing.T) {
+	assert := assert.New(t)
+	for _, s := range testStorages {
+		s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 100})
+		pxy := s.Search(net.ParseIP("5.6.7.8"))
+		assert.Equal(pxy.IP.String(), "5.6.7.8")
+		// not found
+		pxy = s.Search(net.ParseIP("8.8.8.8"))
+		assert.Nil(pxy)
+	}
+}
