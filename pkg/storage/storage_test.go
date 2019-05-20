@@ -106,6 +106,20 @@ func (suite *StorageTestSuite) TestUpdate() {
 	}
 }
 
+func (suite *StorageTestSuite) TestInsertOrUpdate() {
+	for _, s := range suite.storages {
+		p := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
+		err := s.InsertOrUpdate(p)
+		suite.Nil(err)
+		// update
+		p.Score = 100
+		err = s.InsertOrUpdate(p)
+		suite.Nil(err)
+		sp := s.Search(p.IP)
+		suite.Equal(int8(100), sp.Score)
+	}
+}
+
 func TestStorageTestSuite(t *testing.T) {
 	suite.Run(t, new(StorageTestSuite))
 }

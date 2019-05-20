@@ -20,6 +20,7 @@ var (
 type Storage interface {
 	Insert(p *proxy.Proxy) error
 	Update(newP *proxy.Proxy) error
+	InsertOrUpdate(p *proxy.Proxy) error
 	Search(ip net.IP) *proxy.Proxy
 	Delete(ip net.IP) error
 	Len() uint

@@ -97,6 +97,16 @@ func (s *InMemoryStorage) Update(newP *proxy.Proxy) error {
 	return s.Insert(newP)
 }
 
+func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) error {
+	err := s.Insert(p)
+	switch err {
+	case ErrProxyDuplicated:
+		return s.Update(p)
+	default:
+		return err
+	}
+}
+
 func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	proxies := make([]*proxy.Proxy, 0)
 	s.rbt.Descend(s.rbt.Max(), func(i rbtree.Item) bool {
