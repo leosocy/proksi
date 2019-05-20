@@ -97,12 +97,13 @@ func (s *InMemoryStorage) Update(newP *proxy.Proxy) error {
 	return s.Insert(newP)
 }
 
-func (s *InMemoryStorage) Best() *proxy.Proxy {
-	item := s.rbt.Max()
-	if item == nil {
-		return nil
-	}
-	return item.(*compareableProxy).pxy
+func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
+	proxies := make([]*proxy.Proxy, 0)
+	s.rbt.Descend(s.rbt.Max(), func(i rbtree.Item) bool {
+		proxies = append(proxies, i.(*compareableProxy).pxy)
+		return len(proxies) < k
+	})
+	return proxies
 }
 
 func (s *InMemoryStorage) Len() uint {

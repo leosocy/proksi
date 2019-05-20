@@ -72,18 +72,19 @@ func (suite *StorageTestSuite) TestDelete() {
 	}
 }
 
-func (suite *StorageTestSuite) TestBest() {
+func (suite *StorageTestSuite) TestTopK() {
 	for _, s := range suite.storages {
 		// empty
-		bp := s.Best()
-		suite.Nil(bp)
+		bps := s.TopK(10)
+		suite.Empty(bps)
 		// normal
 		p1 := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
 		p2 := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80}
 		s.Insert(p1)
 		s.Insert(p2)
-		bp = s.Best()
-		suite.Equal(p2.IP, bp.IP)
+		bps = s.TopK(3)
+		suite.Equal(2, len(bps))
+		suite.True(bps[0].Score > bps[1].Score)
 	}
 }
 
@@ -99,7 +100,7 @@ func (suite *StorageTestSuite) TestUpdate() {
 		// normal
 		p1.Score = 90
 		err = s.Update(p1)
-		bp := s.Best()
+		bp := s.TopK(1)[0]
 		suite.Nil(err)
 		suite.Equal(p1.IP, bp.IP)
 	}

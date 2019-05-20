@@ -17,15 +17,16 @@ var (
 	ErrProxyDoesNotExists = errors.New("proxy doesn't exists")
 )
 
-type QueryCondition struct {
-}
-
 type Storage interface {
 	Insert(p *proxy.Proxy) error
 	Update(newP *proxy.Proxy) error
 	Search(ip net.IP) *proxy.Proxy
 	Delete(ip net.IP) error
-	Best() *proxy.Proxy
 	Len() uint
+	// TopK returns the first K proxies order by score descend.
+	TopK(k int) []*proxy.Proxy
 	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
+}
+
+type QueryCondition struct {
 }
