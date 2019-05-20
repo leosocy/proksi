@@ -6,22 +6,26 @@ package storage
 
 import (
 	"errors"
+	"net"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 )
 
 var (
-	ErrProxyNil           = errors.New("proxy is nil")
-	ErrProxyScoreNegative = errors.New("proxy score <= 0")
+	ErrProxyInvalid       = errors.New("proxy is nil or score <= 0")
+	ErrProxyDuplicated    = errors.New("proxy is already in storage")
+	ErrProxyDoesNotExists = errors.New("proxy doesn't exists")
 )
 
 type QueryCondition struct {
 }
 
 type Storage interface {
-	Insert(pxy *proxy.Proxy) error
-	// Update(pxy *proxy.Proxy) error
-	// Delete(pxy *proxy.Proxy) error
-	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
+	Insert(p *proxy.Proxy) error
+	Update(newP *proxy.Proxy) error
+	Search(ip net.IP) *proxy.Proxy
+	Delete(ip net.IP) error
+	Best() *proxy.Proxy
 	Len() uint
+	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
 }
