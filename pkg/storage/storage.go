@@ -11,12 +11,18 @@ import (
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 )
 
+// Errors occur when using storage.
 var (
 	ErrProxyInvalid       = errors.New("proxy is nil or score <= 0")
 	ErrProxyDuplicated    = errors.New("proxy is already in storage")
 	ErrProxyDoesNotExists = errors.New("proxy doesn't exists")
 )
 
+// Iterator is the function which will be call for each proxy in storage.
+// It will stop whenever the iterator returns false.
+type Iterator func(pxy *proxy.Proxy) bool
+
+// Storage is a container for proxies.
 type Storage interface {
 	Insert(p *proxy.Proxy) error
 	Update(newP *proxy.Proxy) error
@@ -26,6 +32,7 @@ type Storage interface {
 	Len() uint
 	// TopK returns the first K proxies order by score descend.
 	TopK(k int) []*proxy.Proxy
+	Iter(iter Iterator)
 	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
 }
 

@@ -107,17 +107,28 @@ func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) error {
 	}
 }
 
+func (s *InMemoryStorage) Len() uint {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.rbt.Len()
+}
+
 func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	proxies := make([]*proxy.Proxy, 0)
-	s.rbt.Descend(s.rbt.Max(), func(i rbtree.Item) bool {
-		proxies = append(proxies, i.(*compareableProxy).pxy)
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {
+		proxies = append(proxies, item.(*compareableProxy).pxy)
 		return len(proxies) < k
 	})
 	return proxies
 }
 
-func (s *InMemoryStorage) Len() uint {
+func (s *InMemoryStorage) Iter(iter Iterator) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.rbt.Len()
+	s.rbt.Ascend(s.rbt.Min(), func(item rbtree.Item) bool {
+		pxy := item.(*compareableProxy).pxy
+		return iter(pxy)
+	})
 }
