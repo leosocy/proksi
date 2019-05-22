@@ -5,16 +5,14 @@
 package sched
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
-
 	"github.com/Leosocy/IntelliProxy/pkg/checker"
-
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 	"github.com/Leosocy/IntelliProxy/pkg/spider"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 )
 
 // Scheduler responsible for scheduling cooperation between Spider,Checker and Storage.
@@ -24,6 +22,7 @@ type Scheduler struct {
 	scoreChecker     checker.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geoInfoFetcher   proxy.GeoInfoFetcher
+	storage          storage.Storage
 	limiter          *LimitRule
 }
 
@@ -105,6 +104,5 @@ func (sc *Scheduler) doDetect(pxy *proxy.Proxy) {
 }
 
 func (sc *Scheduler) doSave(pxy *proxy.Proxy) {
-	// TODO: storage.CreateOrUpdate(pxy)
-	fmt.Printf("%+v\n", pxy)
+	sc.storage.InsertOrUpdate(pxy)
 }
