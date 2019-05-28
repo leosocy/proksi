@@ -40,7 +40,6 @@ cov*
 
 ### VisualStudioCode ###
 .vscode
-.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
@@ -48,6 +47,7 @@ cov*
 
 ### IDEA ###
 .idea
+/IntelliProxy.iml
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files

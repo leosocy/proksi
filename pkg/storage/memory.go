@@ -13,13 +13,13 @@ import (
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 )
 
-type compareableProxy struct {
+type comparableProxy struct {
 	pxy *proxy.Proxy
 }
 
 // Less implements rbtree.Less method.
-func (p *compareableProxy) Less(than rbtree.Item) bool {
-	thanP := than.(*compareableProxy)
+func (p *comparableProxy) Less(than rbtree.Item) bool {
+	thanP := than.(*comparableProxy)
 	if p.pxy.IP.Equal(thanP.pxy.IP) {
 		return false
 	}
@@ -41,13 +41,16 @@ func NewInMemoryStorage() *InMemoryStorage {
 	}
 }
 
-func (s *InMemoryStorage) insert(p *proxy.Proxy) {
+func (s *InMemoryStorage) insert(p *proxy.Proxy) error {
 	hasher := fnv.New64()
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.rbt.Insert(&compareableProxy{pxy: p})
-	hasher.Write(p.IP)
+	s.rbt.Insert(&comparableProxy{pxy: p})
+	if _, err := hasher.Write(p.IP); err != nil {
+		return err
+	}
 	s.m[hasher.Sum64()] = p
+	return nil
 }
 
 func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
@@ -57,8 +60,7 @@ func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
 	if sp := s.Search(p.IP); sp != nil {
 		return ErrProxyDuplicated
 	}
-	s.insert(p)
-	return nil
+	return s.insert(p)
 }
 
 func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
@@ -71,13 +73,16 @@ func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
 	return nil
 }
 
-func (s *InMemoryStorage) delete(p *proxy.Proxy) {
+func (s *InMemoryStorage) delete(p *proxy.Proxy) error {
 	hasher := fnv.New64()
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.rbt.Delete(&compareableProxy{pxy: p})
-	hasher.Write(p.IP)
+	s.rbt.Delete(&comparableProxy{pxy: p})
+	if _, err := hasher.Write(p.IP); err != nil {
+		return err
+	}
 	delete(s.m, hasher.Sum64())
+	return nil
 }
 
 func (s *InMemoryStorage) Delete(ip net.IP) error {
@@ -85,8 +90,7 @@ func (s *InMemoryStorage) Delete(ip net.IP) error {
 	if sp = s.Search(ip); sp == nil {
 		return ErrProxyDoesNotExists
 	}
-	s.delete(sp)
-	return nil
+	return s.delete(sp)
 }
 
 // Update implements storage.Update.
@@ -97,13 +101,15 @@ func (s *InMemoryStorage) Update(newP *proxy.Proxy) error {
 	return s.Insert(newP)
 }
 
-func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) error {
+func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) (bool, error) {
 	err := s.Insert(p)
 	switch err {
 	case ErrProxyDuplicated:
-		return s.Update(p)
+		return false, s.Update(p)
+	case nil:
+		return true, nil
 	default:
-		return err
+		return false, err
 	}
 }
 
@@ -118,7 +124,7 @@ func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {
-		proxies = append(proxies, item.(*compareableProxy).pxy)
+		proxies = append(proxies, item.(*comparableProxy).pxy)
 		return len(proxies) < k
 	})
 	return proxies
@@ -126,9 +132,9 @@ func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 
 func (s *InMemoryStorage) Iter(iter Iterator) {
 	s.lock.RLock()
-	defer s.lock.RUnlock()
 	s.rbt.Ascend(s.rbt.Min(), func(item rbtree.Item) bool {
-		pxy := item.(*compareableProxy).pxy
+		pxy := item.(*comparableProxy).pxy
 		return iter(pxy)
 	})
+	s.lock.RUnlock()
 }

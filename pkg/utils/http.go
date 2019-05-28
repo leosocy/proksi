@@ -36,8 +36,10 @@ var (
 	httpsURLOfHTTPBin = "https://httpbin.org/get?show_env=1"
 )
 
-// HTTPBinUtil 通过请求`http(s)://httpbin.org`获取并解析请求头
-type HTTPBinUtil struct{}
+// HTTPBinUtil get and parse the request header by requesting `http(s)://httpbin.org`
+type HTTPBinUtil struct {
+	Timeout time.Duration
+}
 
 // GetRequestHeaders implements RequestHeadersGetter.GetRequestHeaders
 func (u HTTPBinUtil) GetRequestHeaders() (headers HTTPRequestHeaders, err error) {
@@ -59,11 +61,10 @@ func (u HTTPBinUtil) makeRequest(proxyURL string, https bool) (body []byte, err 
 	} else {
 		reqURL = httpURLOfHTTPBin
 	}
-	resp, body, errs := gorequest.New().Proxy(proxyURL).
-		Timeout(20 * time.Second).Get(reqURL).EndBytes()
+	resp, body, errs := gorequest.New().Proxy(proxyURL).Timeout(u.Timeout).Get(reqURL).EndBytes()
 	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil,
-			fmt.Errorf("Request %s failed, proxy [%s], https [%t]", reqURL, proxyURL, https)
+			fmt.Errorf("request %s failed, proxy [%s], https [%t]", reqURL, proxyURL, https)
 	}
 	return body, nil
 }
@@ -82,10 +83,10 @@ func (u HTTPBinUtil) unmarshal(body []byte) (headers HTTPRequestHeaders, err err
 	return headers, errors.New("`headers` not found in response body")
 }
 
-// ParsePublicIP 根据Headers解析Client的公网IP
-// 首先解析`X-Forwarded-For`字段的第一条记录的IP
-// 如果不存在，则解析`X-Real-Ip`字段值
-// 如果都解析失败，则返回nil
+// ParsePublicIP resolves the public IP address of the Client based on Headers
+// First parse the IP of the first record of the `X-Forwarded-For` field
+// parse the `X-Real-Ip` field value if it does not exist
+// If all parsing fails, return nil
 func (h HTTPRequestHeaders) ParsePublicIP() (net.IP, error) {
 	for _, ipStr := range strings.Split(h.XForwardedFor, ",") {
 		if ip := net.ParseIP(strings.TrimSpace(ipStr)); ip != nil {

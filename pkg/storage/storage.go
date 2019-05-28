@@ -19,14 +19,14 @@ var (
 )
 
 // Iterator is the function which will be call for each proxy in storage.
-// It will stop whenever the iterator returns false.
+// It will stop when the iterator returns false.
 type Iterator func(pxy *proxy.Proxy) bool
 
 // Storage is a container for proxies.
 type Storage interface {
 	Insert(p *proxy.Proxy) error
 	Update(newP *proxy.Proxy) error
-	InsertOrUpdate(p *proxy.Proxy) error
+	InsertOrUpdate(p *proxy.Proxy) (inserted bool, err error)
 	Search(ip net.IP) *proxy.Proxy
 	Delete(ip net.IP) error
 	Len() uint

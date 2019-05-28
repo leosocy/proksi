@@ -142,6 +142,7 @@ func (p *Proxy) AddScore(delta int8) {
 		}
 	}
 	p.Score += delta
+	p.CheckedAt = time.Now()
 }
 
 // URL returns string like `ip:port`

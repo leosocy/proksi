@@ -7,6 +7,7 @@ package spider
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
 )
@@ -30,6 +31,16 @@ const (
 	NameOfHappy = "kaixin"
 )
 
+var (
+	defaultLimitRule = &colly.LimitRule{
+		DomainGlob:  "*",
+		Parallelism: 1, // avoids detection that I'm a spider
+		Delay:       10 * time.Second,
+	}
+	defaultPeriod   = 30 * time.Minute
+	defaultCoolDown = 10 * time.Second
+)
+
 // BuildAndInitAll returns all of the enable spider.
 func BuildAndInitAll() (spiders []*Spider) {
 	for _, name := range []string{
@@ -37,30 +48,30 @@ func BuildAndInitAll() (spiders []*Spider) {
 		NameOfIphai, NameOfXila, NameOfNima,
 		NameOfEightnine, NameOfHappy,
 	} {
-		spiders = append(spiders, NewSpider(name))
+		spiders = append(spiders, NewSpider(name, defaultLimitRule))
 	}
 	return
 }
 
 // NewSpider creates a new Spider with name and default configurations.
-func NewSpider(name string) *Spider {
+func NewSpider(name string, lr *colly.LimitRule) *Spider {
 	switch name {
 	case NameOfXici:
-		return newSpider(name, xiciSpider{})
+		return newSpider(name, xiciSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfKuai:
-		return newSpider(name, kuaiSpider{})
+		return newSpider(name, kuaiSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfYun:
-		return newSpider(name, yunSpider{})
+		return newSpider(name, yunSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfIphai:
-		return newSpider(name, iphaiSpider{})
+		return newSpider(name, iphaiSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfXila:
-		return newSpider(name, xilaSpider{})
+		return newSpider(name, xilaSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfNima:
-		return newSpider(name, nimaSpider{})
+		return newSpider(name, nimaSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfEightnine:
-		return newSpider(name, eightnineSpider{})
+		return newSpider(name, eightnineSpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	case NameOfHappy:
-		return newSpider(name, happySpider{})
+		return newSpider(name, happySpider{}, Limit(lr), Period(defaultPeriod), CoolDownTime(defaultCoolDown))
 	default:
 		return nil
 	}
