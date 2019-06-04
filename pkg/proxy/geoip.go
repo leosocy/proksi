@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
+
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 
 	"github.com/parnurzeal/gorequest"
 )
@@ -52,6 +55,7 @@ func NewGeoInfoFetcher(name string) (f GeoInfoFetcher) {
 	case NameOfIPAPIFetcher:
 		f = &ipAPIFetcher{
 			baseFetcher{tagName: "ip-api-json", baseURL: "http://ip-api.com"},
+			&utils.RateLimiter{Delay: 5 * time.Second, Parallelism: 8}, // ≈ 60/Delay*Parall=96times/min,
 		}
 	default:
 		return nil
@@ -76,7 +80,7 @@ func (f *baseFetcher) Do(ip string) (info *GeoInfo, err error) {
 
 func (f *baseFetcher) fetch(ip string) (body []byte, err error) {
 	url := fmt.Sprintf(f.urlFormatter, ip)
-	resp, body, errs := gorequest.New().Get(url).EndBytes()
+	resp, body, errs := gorequest.New().Timeout(5 * time.Second).Get(url).EndBytes()
 	if errs != nil || resp == nil || resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch info from %s failed", url)
 	}
@@ -107,7 +111,7 @@ func (f *baseFetcher) unmarshal(body []byte) (info *GeoInfo, err error) {
 // ipAPIFetcher see document: `http://www.ip-api.com/docs/api:json`
 type ipAPIFetcher struct {
 	baseFetcher
-	// TODO: rate limit with (150 times/min)
+	limiter utils.Limiter
 }
 
 func (f *ipAPIFetcher) init() {
@@ -124,4 +128,19 @@ func (f *ipAPIFetcher) init() {
 		sb.WriteString(fmt.Sprintf(",%s", tagValue))
 	}
 	f.urlFormatter = sb.String()
+	f.limiter.Init()
+}
+
+func (f *ipAPIFetcher) fetch(ip string) (body []byte, err error) {
+	f.limiter.Enter()
+	defer f.limiter.Exit()
+	return f.baseFetcher.fetch(ip)
+}
+
+func (f *ipAPIFetcher) Do(ip string) (info *GeoInfo, err error) {
+	var body []byte
+	if body, err = f.fetch(ip); err == nil {
+		info, err = f.unmarshal(body)
+	}
+	return
 }

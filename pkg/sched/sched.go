@@ -5,16 +5,14 @@
 package sched
 
 import (
-	"fmt"
-	"sync"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/utils"
-
-	"github.com/Leosocy/gipp/pkg/checker"
-
-	"github.com/Leosocy/gipp/pkg/proxy"
-	"github.com/Leosocy/gipp/pkg/spider"
+	"github.com/Leosocy/IntelliProxy/pkg/checker"
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/spider"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
+	"github.com/Sirupsen/logrus"
 )
 
 // Scheduler responsible for scheduling cooperation between Spider,Checker and Storage.
@@ -24,34 +22,32 @@ type Scheduler struct {
 	scoreChecker     checker.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geoInfoFetcher   proxy.GeoInfoFetcher
-	limiter          *LimitRule
+	storage          storage.Storage
+	logger           *logrus.Logger
 }
 
 // NewScheduler returns a new scheduler instance with default configuration.
 func NewScheduler() *Scheduler {
-	return &Scheduler{
+	sc := &Scheduler{
 		spiders:          spider.BuildAndInitAll(),
 		cachedChan:       proxy.NewBloomCachedChan(),
 		scoreChecker:     checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
-		reqHeadersGetter: utils.HTTPBinUtil{},
+		reqHeadersGetter: utils.HTTPBinUtil{Timeout: 5 * time.Second},
 		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
+		storage:          storage.NewInMemoryStorage(),
+		logger:           logrus.New(),
 	}
+	sc.logger.Formatter = &logrus.TextFormatter{FullTimestamp: true}
+	return sc
 }
 
-// RateLimit set a new LimitRule to the scheduler.
-func (sc *Scheduler) RateLimit(r *LimitRule) error {
-	sc.limiter = r
-	return r.Init()
-}
-
-// Start starts one goroutine for each spider
-// and crawls the proxy to the specified cached channel.
-// Receives the proxy in the channel, use the checker
-// to score it in a round, and then store it in the specified storage.
+// Start open the background crawling, detection, inspection tasks,
+// and receive the agent and process.
 func (sc *Scheduler) Start() {
-	for _, s := range sc.spiders {
-		go s.CrawlTo(sc.cachedChan)
-	}
+	// TODO: threshold从配置中加载
+	go sc.bgCrawling(100)
+	go sc.bgDetections(15 * time.Minute)
+	go sc.bgInspection(30 * time.Minute)
 	sc.loopRecv()
 }
 
@@ -60,51 +56,102 @@ func (sc *Scheduler) loopRecv() {
 	for {
 		select {
 		case pxy := <-recvCh:
-			go sc.procProxy(pxy)
+			go sc.inspectProxy(pxy)
 		}
 	}
 }
 
-func (sc *Scheduler) procProxy(pxy *proxy.Proxy) {
-	if sc.limiter != nil {
-		sc.limiter.waitChan <- struct{}{}
-		defer func() {
-			time.Sleep(sc.limiter.Delay)
-			<-sc.limiter.waitChan
-		}()
-	}
+func (sc *Scheduler) inspectProxy(pxy *proxy.Proxy) {
 	score := sc.scoreChecker.Score(pxy)
+	entry := sc.logger.WithFields(logrus.Fields{
+		"url":   pxy.URL(),
+		"score": score,
+	})
 	if score > 0 {
-		sc.doDetect(pxy)
-		sc.doSave(pxy)
+		if inserted, err := sc.storage.InsertOrUpdate(pxy); err == nil {
+			action := "Updated"
+			if inserted {
+				action = "Inserted"
+			}
+			entry.Infof("%s proxy to storage", action)
+		}
+	} else {
+		if err := sc.storage.Delete(pxy.IP); err == nil {
+			entry.Info("Deleted proxy from storage")
+		}
 	}
 }
 
-// TODO: scheduler只负责质量检查，对于合格的proxy，写入storage后，由一个后台线程定期从中取出记录
-// 如果anonymity/GeoInfo 为空则补全，另外会无条件detect speed/latency。
-func (sc *Scheduler) doDetect(pxy *proxy.Proxy) {
-	var wg sync.WaitGroup
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		pxy.DetectAnonymity(sc.reqHeadersGetter)
-	}()
-	// go func() {
-	// 	defer wg.Done()
-	// 	pxy.DetectGeoInfo(sc.geoInfoFetcher)
-	// }()
-	go func() {
-		defer wg.Done()
-		pxy.DetectLatency()
-	}()
-	go func() {
-		defer wg.Done()
-		pxy.DetectSpeed()
-	}()
-	wg.Wait()
+func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
+	entry := sc.logger.WithFields(logrus.Fields{
+		"url": pxy.URL(),
+	})
+	if pxy.Anon == proxy.Unknown {
+		if err := pxy.DetectAnonymity(sc.reqHeadersGetter); err != nil {
+			entry.Warnf("Failed to detect anonymity, %v", err)
+		} else {
+			if err := sc.storage.Update(pxy); err == nil {
+				entry.Info("Updated anonymity")
+			}
+		}
+	}
+	if pxy.GeoInfo == nil {
+		if err := pxy.DetectGeoInfo(sc.geoInfoFetcher); err != nil {
+			entry.Warnf("Failed to detect geography information, %v", err)
+		} else {
+			if err := sc.storage.Update(pxy); err == nil {
+				entry.Infof("Updated geography information")
+			}
+		}
+	}
 }
 
-func (sc *Scheduler) doSave(pxy *proxy.Proxy) {
-	// TODO: storage.CreateOrUpdate(pxy)
-	fmt.Printf("%+v\n", pxy)
+func (sc *Scheduler) bgDetections(period time.Duration) {
+	ticker := time.NewTicker(period)
+	defer ticker.Stop()
+	iterDetections := func() {
+		sc.logger.Info("Start iterating the proxies and detecting anonymity/geo info")
+		sc.storage.Iter(func(pxy *proxy.Proxy) bool {
+			go sc.completeProxy(pxy)
+			return true
+		})
+		sc.logger.Info("Finish iterating the proxies and detecting anonymity/geo info")
+	}
+	for {
+		select {
+		case <-ticker.C:
+			iterDetections()
+		}
+	}
+}
+
+func (sc *Scheduler) bgInspection(period time.Duration) {
+	ticker := time.NewTicker(period)
+	defer ticker.Stop()
+	iterInspection := func() {
+		sc.storage.Iter(func(pxy *proxy.Proxy) bool {
+			go sc.inspectProxy(pxy)
+			return true
+		})
+	}
+	for {
+		select {
+		case <-ticker.C:
+			iterInspection()
+		}
+	}
+}
+
+// bgCrawling when the number of proxies in storage is less than threshold, start crawling.
+func (sc *Scheduler) bgCrawling(threshold uint) {
+	for _, s := range sc.spiders {
+		go s.Start(sc.cachedChan)
+	}
+	// TODO: ProxyCountWatcher 监测当代理个数不足阈值时调度spider开启一次爬取
+	for {
+		for _, s := range sc.spiders {
+			s.TryCrawl()
+		}
+		time.Sleep(5 * time.Minute)
+	}
 }

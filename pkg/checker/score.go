@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 	"github.com/parnurzeal/gorequest"
 )
 
@@ -21,11 +21,12 @@ type Scorer interface {
 	Score(pxy *proxy.Proxy) int8
 }
 
-// BatchHTTPSScorer try visiting a batch of HTTPS websites
+// BatchHTTPSScorer tryRequest visiting a batch of HTTPS websites
 // and grade the proxy by response time.
 type BatchHTTPSScorer struct {
 	hosts   []string
 	timeout time.Duration
+	// TODO: 如果并发检测过多proxy可能会影响RT，进而导致得分不准确。可以引入RateLimiter
 }
 
 // NewBatchHTTPSScorer returns a new scorer,
@@ -34,12 +35,12 @@ type BatchHTTPSScorer struct {
 // If response time smaller than timeout/2,
 // score increments by (timeout/2 - RT)
 // else score decrements by (RT - timeout/2).
-// So, if all host try failed, the proxy score will be reduced to 0
+// So, if all host tryRequest failed, the proxy score will be reduced to 0
 func NewBatchHTTPSScorer(hosts []string) Scorer {
 	if len(hosts) < 2 {
 		panic(errors.New("length of hosts must be bigger than 2"))
 	}
-	// Ceil to make sure that the score is reduced to 0 when all try fails.
+	// Ceil to make sure that the score is reduced to 0 when all tryRequest fails.
 	avg := math.Ceil(float64(proxy.MaximumScore) / float64(len(hosts)))
 	return &BatchHTTPSScorer{
 		hosts:   hosts,
@@ -47,13 +48,13 @@ func NewBatchHTTPSScorer(hosts []string) Scorer {
 	}
 }
 
-// Score try to use proxy visit each host, and modifies
+// Score tryRequest to use proxy visit each host, and modifies
 // the corresponding proxy score based on the return value .
 func (s *BatchHTTPSScorer) Score(pxy *proxy.Proxy) int8 {
-	// since we don't try diff host parallel, so init request here to reduce mem cost.
+	// since we don't tryRequest diff host parallel, so init request here to reduce mem cost.
 	sa := gorequest.New().Proxy(pxy.URL()).Timeout(s.timeout)
 	for _, host := range s.hosts {
-		rt, _ := s.try(sa, host)
+		rt, _ := s.tryRequest(sa, host)
 		delta := (s.timeout/2 - rt).Seconds()
 		pxy.AddScore(int8(math.Floor(delta)))
 	}
@@ -61,7 +62,7 @@ func (s *BatchHTTPSScorer) Score(pxy *proxy.Proxy) int8 {
 }
 
 // do requests to host with proxy and timeout, then calculate the response time.
-func (s *BatchHTTPSScorer) try(sa *gorequest.SuperAgent, host string) (rt time.Duration, err error) {
+func (s *BatchHTTPSScorer) tryRequest(sa *gorequest.SuperAgent, host string) (rt time.Duration, err error) {
 	start := time.Now()
 	resp, _, errs := sa.Get(host).EndBytes()
 	if resp == nil || resp.StatusCode != http.StatusOK || errs != nil {

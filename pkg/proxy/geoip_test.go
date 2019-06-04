@@ -5,6 +5,7 @@
 package proxy
 
 import (
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -39,7 +40,8 @@ func newMockedFetcher(name string, url string) (f GeoInfoFetcher) {
 	switch name {
 	case NameOfIPAPIFetcher:
 		f = &ipAPIFetcher{
-			baseFetcher{tagName: "ip-api-json", baseURL: url},
+			baseFetcher: baseFetcher{tagName: "ip-api-json", baseURL: url},
+			limiter:     &utils.RateLimiter{Delay: 10, Parallelism: 2},
 		}
 	}
 	f.init()

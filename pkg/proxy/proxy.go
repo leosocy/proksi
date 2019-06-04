@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Leosocy/gipp/pkg/utils"
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 )
 
 // Anonymity 匿名度, 请求`https://httpbin.org/get?show_env=1`
@@ -142,6 +142,7 @@ func (p *Proxy) AddScore(delta int8) {
 		}
 	}
 	p.Score += delta
+	p.CheckedAt = time.Now()
 }
 
 // URL returns string like `ip:port`

@@ -8,7 +8,6 @@ CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
-Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
@@ -41,11 +40,14 @@ cov*
 
 ### VisualStudioCode ###
 .vscode
-.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+### IDEA ###
+.idea
+/IntelliProxy.iml
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files

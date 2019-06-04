@@ -38,7 +38,7 @@ func LoadConfigProvider(appName string) Provider {
 }
 
 func init() {
-	defaultConfig = readViperConfig("GIPP")
+	defaultConfig = readViperConfig("INTELLI_PROXY")
 }
 
 func readViperConfig(appName string) *viper.Viper {

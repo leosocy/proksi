@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 )
 
 const (
@@ -72,7 +73,7 @@ func TestHTTPBinUtil_GetRequestHeaderUsingProxy(t *testing.T) {
 			}))
 			defer ts.Close()
 			httpURLOfHTTPBin = ts.URL
-			gotHeaders, err := HTTPBinUtil{}.GetRequestHeadersUsingProxy(tt.args.proxyURL)
+			gotHeaders, err := HTTPBinUtil{Timeout: 10 * time.Second}.GetRequestHeadersUsingProxy(tt.args.proxyURL)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("HTTPBinUtil.GetRequestHeaderUsingProxy() error = %v, wantErr %v", err, tt.wantErr)
 				return
