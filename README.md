@@ -1,12 +1,11 @@
-# IntelliProxy: An intelligent IP proxy
+# IntelliProxy: Provide durable, real-time, high-quality proxies as a middleman or datasource server
 
 [![Build Status](https://travis-ci.org/Leosocy/IntelliProxy.svg?branch=master)](https://travis-ci.org/Leosocy/IntelliProxy)
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
-> 支持以下模式
 
-- gate: 代理client请求，并根据proxy pool转发请求到最佳的代理。
-- datasource: 返回client请求的proxies。
+> - middleman: client <--request--> middleman server <--> real proxy server <--> internet
+> - datasource: client <--RESTful api--> data source server
 
 通过go的高并发，周期性爬取大量免费的代理资源，进行质量筛选，并存储到Storage中，提供**稳定**、**实时**、**高可用**的HTTP/HTTPS代理。
 
@@ -20,7 +19,7 @@
 - Storage: 存储Proxy的介质，例如InMemory、MySQL、Mongo、Redis等等。
 - Scheduler: 负责调度Spider, Checker, Storage之间的合作。
 - Service  
-  - gate: client可以直接将代理服务器指向gate监听的端口，IntelliProxy会选出最佳的代理服务器转发出去。
+  - middleman: client可以直接将代理服务器指向middleman监听的端口，IntelliProxy会选出最佳的代理服务器转发出去。
   - datasource: 提供RESTful API，支持查询符合条件的proxy。
 
 ## 主要用到的开源包
@@ -31,18 +30,16 @@
 
 ## 启动
 
-## API Usage
+## Usage
 
-### gate
+### middleman
 
-### proxies
+### datasource
 
 |                                API                                | Method |             Description              |                       Args                        |  Try  |
 | :---------------------------------------------------------------: | :----: | :----------------------------------: | :-----------------------------------------------: | :---: |
 |           `http://localhost:8000/proxies?ipp=10&page=1`           |  GET   | 根据Score.Desc，返回指定页的10个代理 | `ipp`:一页返回n条记录，range(0, 50]  `page`:第n页 |       |
 | `http://localhost:8000/proxies?ipp=10&page=1&geo.country_code=CN` |  GET   | 根据Geo信息的国家码返回`中国`的代理  |                  `geo.xxx`: xxx                   |
-
-### uas
 
 ## TODO List
 
