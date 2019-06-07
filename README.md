@@ -4,10 +4,15 @@
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
 <p align="center">
-client <--> middleman server <--> real proxy server <--> target host
-  <a href="https://github.com/Leosocy/IntelliProxy">
-    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer.gif">
-  </a>
+  <head>IntelliProxy can be used as an middleman proxy server to forward requests to a real proxy server according to the strategy.
+  
+  The client can simply use IntelliProxy as a proxy server to achieve random ip access to the target host.
+  
+  client <--> middleman server <--> real proxy server <--> target host
+  </head>
+  <body>
+    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High.gif">
+  </body>
 </p>
 
 > - datasource: client <--RESTful api--> data source server
