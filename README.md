@@ -4,11 +4,8 @@
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
 <p align="center">
-  <head>IntelliProxy can be used as an middleman proxy server to forward requests to a real proxy server according to the strategy.
-  
-  The client can simply use IntelliProxy as a proxy server to achieve random ip access to the target host.
-  
-  client <--> middleman server <--> real proxy server <--> target host
+  <head>
+    The client can simply use IntelliProxy as a proxy server to achieve random ip access to the target host. IntelliProxy acts as a middleman to forward client requests to real proxy servers according to certain strategies.</br>client <--> middleman server <--> real proxy server <--> target host
   </head>
   <body>
     <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High.gif">
