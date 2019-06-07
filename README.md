@@ -8,7 +8,7 @@
     The client can simply use IntelliProxy as a proxy server to achieve random ip access to the target host. IntelliProxy acts as a middleman to forward client requests to real proxy servers according to certain strategies.</br>client <--> middleman server <--> real proxy server <--> target host
   </head>
   <body>
-    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High.gif">
+    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High-Compress.gif">
   </body>
 </p>
 
