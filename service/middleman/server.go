@@ -5,43 +5,94 @@
 package middleman
 
 import (
-	"github.com/Sirupsen/logrus"
+	"bufio"
+	"errors"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
 	"github.com/elazarl/goproxy"
+	"io/ioutil"
+	"math/rand"
+	"net"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
 
-type ProxyConn struct {
+type connectDialFunc func(network, address string) (net.Conn, error)
 
+type proxyURLGetter func() (*url.URL, error)
+
+// Server is a middleman between client and proxy server.
+type Server struct {
+	storage storage.Storage
+	*goproxy.ProxyHttpServer
 }
 
-type PooledProxyConns struct {
-
-}
-
-// ProxyServer is a middleman between client and proxy server
-// client <--> middleman <--> proxy server <--> destination
-type ProxyServer struct {
-	// 对goproxy.ProxyHttpServer封装，
-}
-
-func ListenAndServe() {
-	middleman := goproxy.NewProxyHttpServer()
-	middleman.Verbose = true
-	proxy := "http://122.193.246.140:9999"
-	// for request to http://xxx，middleman<->proxy server连接默认keepalive，
-	// 好像默认75s，改天查一下。
-	middleman.Tr.Proxy = func(request *http.Request) (*url.URL, error) {
-		return url.Parse(proxy)
+func httpConnectDialToProxyHandler(pg proxyURLGetter) func(r *http.Request) (*url.URL, error) {
+	return func(r *http.Request) (*url.URL, error) {
+		return pg()
 	}
-	// for request to https://xxx，middleman<->proxy server连接每次关闭
-	middleman.ConnectDial = middleman.NewConnectDialToProxy(proxy)
-	//middleman.Tr.Dial = func(network, addr string) (c net.Conn, err error) {
-	//	c, err = net.Dial(network, addr)
-	//	if c, ok := c.(*net.TCPConn); err == nil && ok {
-	//		err = c.SetKeepAlive(true)
-	//	}
-	//	return
-	//}
-	logrus.Fatal(http.ListenAndServe(":8081", middleman))
+}
+
+func httpsConnectDialToProxyHandler(pg proxyURLGetter, dial connectDialFunc) connectDialFunc {
+	return func(network, addr string) (net.Conn, error) {
+		proxyURL, err := pg()
+		if err != nil {
+			return nil, err
+		}
+		if strings.IndexRune(proxyURL.Host, ':') == -1 {
+			proxyURL.Host += ":80"
+		}
+		connectReq := &http.Request{
+			Method: "CONNECT",
+			URL:    &url.URL{Opaque: addr},
+			Host:   addr,
+			Header: make(http.Header),
+		}
+		c, err := dial(network, proxyURL.Host)
+		if err != nil {
+			return nil, err
+		}
+		connectReq.Write(c)
+		// Read response.
+		// Okay to use and discard buffered reader here, because
+		// TLS server will not speak until spoken to.
+		br := bufio.NewReader(c)
+		resp, err := http.ReadResponse(br, connectReq)
+		if err != nil {
+			c.Close()
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			resp, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			c.Close()
+			return nil, errors.New("proxy refused connection" + string(resp))
+		}
+		return c, nil
+	}
+}
+
+func NewServer(storage storage.Storage) *Server {
+	ps := goproxy.NewProxyHttpServer()
+	middleman := &Server{
+		storage:         storage,
+		ProxyHttpServer: ps,
+	}
+	rand.Seed(time.Now().UnixNano())
+	middleman.Tr.Proxy = httpConnectDialToProxyHandler(middleman.getProxyURL)
+	middleman.ConnectDial = httpsConnectDialToProxyHandler(middleman.getProxyURL, net.Dial)
+	return middleman
+}
+
+func (s *Server) getProxyURL() (*url.URL, error) {
+	proxies := s.storage.TopK(20)
+	if len(proxies) == 0 {
+		return nil, errors.New("no proxy available")
+	}
+	index := rand.Int() % len(proxies)
+	return url.Parse(proxies[index].URL())
 }

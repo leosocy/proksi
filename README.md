@@ -3,8 +3,13 @@
 [![Build Status](https://travis-ci.org/Leosocy/IntelliProxy.svg?branch=master)](https://travis-ci.org/Leosocy/IntelliProxy)
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
+<p align="center">
+client <--> middleman server <--> real proxy server <--> target host
+  <a href="https://github.com/Leosocy/IntelliProxy">
+    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer.gif">
+  </a>
+</p>
 
-> - middleman: client <--request--> middleman server <--> real proxy server <--> internet
 > - datasource: client <--RESTful api--> data source server
 
 通过go的高并发，周期性爬取大量免费的代理资源，进行质量筛选，并存储到Storage中，提供**稳定**、**实时**、**高可用**的HTTP/HTTPS代理。

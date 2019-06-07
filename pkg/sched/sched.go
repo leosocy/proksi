@@ -41,6 +41,10 @@ func NewScheduler() *Scheduler {
 	return sc
 }
 
+func (sc *Scheduler) GetStorage() storage.Storage {
+	return sc.storage
+}
+
 // Start open the background crawling, detection, inspection tasks,
 // and receive the agent and process.
 func (sc *Scheduler) Start() {
@@ -152,6 +156,6 @@ func (sc *Scheduler) bgCrawling(threshold uint) {
 		for _, s := range sc.spiders {
 			s.TryCrawl()
 		}
-		time.Sleep(5 * time.Minute)
+		time.Sleep(20 * time.Minute)
 	}
 }
