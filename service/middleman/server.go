@@ -7,8 +7,6 @@ package middleman
 import (
 	"bufio"
 	"errors"
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
-	"github.com/elazarl/goproxy"
 	"io/ioutil"
 	"math/rand"
 	"net"
@@ -16,6 +14,9 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/elazarl/goproxy"
 )
 
 type connectDialFunc func(network, address string) (net.Conn, error)

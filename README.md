@@ -3,23 +3,9 @@
 [![Build Status](https://travis-ci.org/Leosocy/IntelliProxy.svg?branch=master)](https://travis-ci.org/Leosocy/IntelliProxy)
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
-<p align="center">
-  <head>IntelliProxy can be used as an middleman proxy server to forward requests to a real proxy server according to the strategy.
-  
-  The client can simply use IntelliProxy as a proxy server to achieve random ip access to the target host.
-  
-  client <--> middleman server <--> real proxy server <--> target host
-  </head>
-  <body>
-    <img src="https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High.gif">
-  </body>
-</p>
-
-> - datasource: client <--RESTful api--> data source server
-
-通过go的高并发，周期性爬取大量免费的代理资源，进行质量筛选，并存储到Storage中，提供**稳定**、**实时**、**高可用**的HTTP/HTTPS代理。
-
-由于目前大部分网站都会重定向到https，所以如果代理不支持访问HTTPS，对需要使用代理的爬虫程序来说用处就不是很大了。基于这种情况，IntelliProxy **只会提供HTTP/HTTPS均支持** 的代理。并且会定期的对这些代理进行质量检查并打分，从而甄别出质量很高的代理。
+The client can simply use `IntelliProxy` as a proxy server to achieve random ip access to the target host. `IntelliProxy` acts as a middleman to forward client requests to real proxy servers according to certain strategies.
+![middleman](https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High-Compress.gif)
+Or the client can use `IntelliProxy` as a data source to request the required proxy through the RESTful API.
 
 ## 组织架构
 

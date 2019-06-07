@@ -78,13 +78,13 @@ func (suite *StorageTestSuite) TestTopK() {
 		bps := s.TopK(10)
 		suite.Empty(bps)
 		// normal
-		p1 := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
-		p2 := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80}
-		s.Insert(p1)
-		s.Insert(p2)
-		bps = s.TopK(3)
+		s.Insert(&proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50})
+		s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80})
+		s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 10})
+		bps = s.TopK(2)
 		suite.Equal(2, len(bps))
 		suite.True(bps[0].Score > bps[1].Score)
+		suite.Equal(3, len(s.TopK(0)))
 	}
 }
 

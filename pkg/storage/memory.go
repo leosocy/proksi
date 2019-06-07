@@ -125,16 +125,16 @@ func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	defer s.lock.RUnlock()
 	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {
 		proxies = append(proxies, item.(*comparableProxy).pxy)
-		return len(proxies) < k
+		return k == 0 || len(proxies) < k
 	})
 	return proxies
 }
 
 func (s *InMemoryStorage) Iter(iter Iterator) {
 	s.lock.RLock()
+	defer s.lock.RUnlock()
 	s.rbt.Ascend(s.rbt.Min(), func(item rbtree.Item) bool {
 		pxy := item.(*comparableProxy).pxy
 		return iter(pxy)
 	})
-	s.lock.RUnlock()
 }

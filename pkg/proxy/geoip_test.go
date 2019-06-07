@@ -5,11 +5,12 @@
 package proxy
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/Leosocy/IntelliProxy/pkg/utils"
 )
 
 func fakeTooManyRequestsResp(w http.ResponseWriter, r *http.Request) {

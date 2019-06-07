@@ -31,6 +31,7 @@ type Storage interface {
 	Delete(ip net.IP) error
 	Len() uint
 	// TopK returns the first K proxies order by score descend.
+	// If k is equal to 0, return all proxies in the storage
 	TopK(k int) []*proxy.Proxy
 	Iter(iter Iterator)
 	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
