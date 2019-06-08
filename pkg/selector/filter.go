@@ -3,3 +3,19 @@
 // that can be found in the LICENSE file.
 
 package selector
+
+import "github.com/Leosocy/IntelliProxy/pkg/proxy"
+
+// FilterScore is a score based Select Filter which will
+// only return proxies which score >= threshold
+func FilterScore(threshold int8) Filter {
+	return func(old []*proxy.Proxy) []*proxy.Proxy {
+		var proxies []*proxy.Proxy
+		for _, pxy := range old {
+			if pxy.Score >= threshold {
+				proxies = append(proxies, pxy)
+			}
+		}
+		return proxies
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO(leosocy): Selector可以是一个interface，现有实现其实是一个基于内存的PooledSelector，
 type Selector struct {
 	Strategy  Strategy
 	Storage   storage.Storage
