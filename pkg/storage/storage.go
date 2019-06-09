@@ -16,6 +16,7 @@ var (
 	ErrProxyInvalid       = errors.New("proxy is nil or score <= 0")
 	ErrProxyDuplicated    = errors.New("proxy is already in storage")
 	ErrProxyDoesNotExists = errors.New("proxy doesn't exists")
+	ErrProxyNoneAvailable = errors.New("proxy none available")
 )
 
 // Iterator is the function which will be call for each proxy in storage.
@@ -25,16 +26,15 @@ type Iterator func(pxy *proxy.Proxy) bool
 // Storage is a container for proxies.
 type Storage interface {
 	Insert(p *proxy.Proxy) error
+	// Select returns proxies after filter with options
+	Select(opts ...SelectOption) ([]*proxy.Proxy, error)
 	Update(newP *proxy.Proxy) error
 	InsertOrUpdate(p *proxy.Proxy) (inserted bool, err error)
 	Search(ip net.IP) *proxy.Proxy
 	Delete(ip net.IP) error
 	Len() uint
 	// TopK returns the first K proxies order by score descend.
+	// If k is equal to 0, return all proxies in the storage
 	TopK(k int) []*proxy.Proxy
 	Iter(iter Iterator)
-	// Query(cond QueryCondition) ([]*proxy.Proxy, error)
-}
-
-type QueryCondition struct {
 }

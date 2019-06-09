@@ -1,7 +1,27 @@
 @startuml
-Alice -> Bob: Authentication Request
-Bob --> Alice: Authentication Response
 
-Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response
+client -> middleman: HTTP Connect Method
+middleman -> real_proxy: HTTP Connect Method
+real_proxy -> target_host: TCP Connect
+
+target_host --> real_proxy: TCP Establish
+real_proxy --> middleman: HTTP Establish
+middleman --> client: HTTP Establish
+
+client -> middleman: TLS Handshake
+middleman -> real_proxy: Copy Raw Data
+real_proxy -> target_host: Copy Raw Data
+
+target_host --> real_proxy: TLS Handshake Done
+real_proxy --> middleman: Copy Raw Data
+middleman --> client: Copy Raw Data
+
+client -> middleman: Application Data
+middleman -> real_proxy: Copy Raw Data
+real_proxy -> target_host: Copy Raw Data
+
+target_host --> real_proxy: Application Data
+real_proxy --> middleman: Copy Raw Data
+middleman --> client: Copy Raw Data
+
 @enduml
