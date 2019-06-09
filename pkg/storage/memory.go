@@ -63,6 +63,25 @@ func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
 	return s.insert(p)
 }
 
+func (s *InMemoryStorage) Select(opts ...SelectOption) ([]*proxy.Proxy, error) {
+	sopts := SelectOptions{}
+	for _, opt := range opts {
+		opt(&sopts)
+	}
+	proxies := s.TopK(0)
+	for _, filter := range sopts.Filters {
+		proxies = filter(proxies)
+	}
+	if len(proxies) == 0 || sopts.Offset >= len(proxies) {
+		return nil, ErrProxyNoneAvailable
+	}
+	remained := len(proxies) - sopts.Offset
+	if sopts.Limit == 0 || sopts.Limit >= remained {
+		return proxies[sopts.Offset:], nil
+	}
+	return proxies[sopts.Offset : sopts.Offset+sopts.Limit], nil
+}
+
 func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
 	hasher := fnv.New64()
 	s.lock.RLock()
@@ -121,11 +140,12 @@ func (s *InMemoryStorage) Len() uint {
 
 func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	proxies := make([]*proxy.Proxy, 0)
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {
-		proxies = append(proxies, item.(*comparableProxy).pxy)
-		return k == 0 || len(proxies) < k
+	s.Iter(func(pxy *proxy.Proxy) bool {
+		if k == 0 || len(proxies) < k {
+			proxies = append(proxies, pxy)
+			return true
+		}
+		return false
 	})
 	return proxies
 }
@@ -133,7 +153,7 @@ func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 func (s *InMemoryStorage) Iter(iter Iterator) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	s.rbt.Ascend(s.rbt.Min(), func(item rbtree.Item) bool {
+	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {
 		pxy := item.(*comparableProxy).pxy
 		return iter(pxy)
 	})

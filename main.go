@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/Leosocy/IntelliProxy/pkg/sched"
 	"github.com/Leosocy/IntelliProxy/service/middleman"
-	"net/http"
 )
 
 func main() {

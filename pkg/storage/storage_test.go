@@ -22,32 +22,58 @@ func (suite *StorageTestSuite) SetupTest() {
 	suite.storages = []Storage{
 		NewInMemoryStorage(),
 	}
-}
-
-func (suite *StorageTestSuite) TestInsert() {
+	// insert and assert some proxies
 	for _, s := range suite.storages {
 		// insert invalid proxy
 		err := s.Insert(nil)
 		suite.Equal(err, ErrProxyInvalid)
-		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 0})
-		suite.Equal(err, ErrProxyInvalid)
-		// insert one proxy
-		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 100})
+		// insert two proxy
+		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50})
+		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80})
 		suite.Nil(err)
-		suite.Equal(uint(1), s.Len())
+		suite.Equal(uint(2), s.Len())
 		// insert another proxy
-		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 100})
-		suite.Equal(uint(2), s.Len())
+		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 30})
+		suite.Equal(uint(3), s.Len())
 		// insert proxy with same IP
-		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 50})
+		err = s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 40})
 		suite.Equal(err, ErrProxyDuplicated)
-		suite.Equal(uint(2), s.Len())
+		suite.Equal(uint(3), s.Len())
+	}
+}
+
+func (suite *StorageTestSuite) TestSelect() {
+	for _, s := range suite.storages {
+		// no options
+		pxys, err := s.Select()
+		suite.Equal(s.Len(), uint(len(pxys)))
+		suite.Nil(err)
+		// with limit
+		pxys, err = s.Select(WithLimit(1))
+		suite.Equal(1, len(pxys))
+		suite.Nil(err)
+		// with offset
+		pxys, err = s.Select(WithOffset(1))
+		suite.Equal(2, len(pxys))
+		suite.Nil(err)
+		// filter score
+		pxys, err = s.Select(WithFilter(FilterScore(60)))
+		suite.Equal(1, len(pxys))
+		suite.True(pxys[0].Score >= 60)
+		// filter score none available
+		pxys, err = s.Select(WithFilter(FilterScore(100)))
+		suite.NotNil(err)
+		// filter and offset, limit
+		pxys, err = s.Select(WithFilter(FilterScore(50)), WithLimit(10))
+		suite.Equal(2, len(pxys))
+		// filter and offset out of range
+		pxys, err = s.Select(WithFilter(FilterScore(50)), WithOffset(10))
+		suite.NotNil(err)
 	}
 }
 
 func (suite *StorageTestSuite) TestSearch() {
 	for _, s := range suite.storages {
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 100})
 		pxy := s.Search(net.ParseIP("5.6.7.8"))
 		suite.Equal(pxy.IP.String(), "5.6.7.8")
 		// not found
@@ -58,30 +84,22 @@ func (suite *StorageTestSuite) TestSearch() {
 
 func (suite *StorageTestSuite) TestDelete() {
 	for _, s := range suite.storages {
-		p := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 100}
-		s.Insert(p)
 		// does not exists
 		err := s.Delete(net.ParseIP("8.8.8.8"))
 		suite.Equal(err, ErrProxyDoesNotExists)
 		// normal
-		err = s.Delete(p.IP)
-		searchP := s.Search(p.IP)
+		bLen := s.Len()
+		err = s.Delete(net.ParseIP("5.6.7.8"))
+		searchP := s.Search(net.ParseIP("5.6.7.8"))
 		suite.Nil(err)
 		suite.Nil(searchP)
-		suite.Equal(uint(0), s.Len())
+		suite.Equal(bLen-1, s.Len())
 	}
 }
 
 func (suite *StorageTestSuite) TestTopK() {
 	for _, s := range suite.storages {
-		// empty
-		bps := s.TopK(10)
-		suite.Empty(bps)
-		// normal
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50})
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80})
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("9.10.11.12"), Port: 80, Score: 10})
-		bps = s.TopK(2)
+		bps := s.TopK(2)
 		suite.Equal(2, len(bps))
 		suite.True(bps[0].Score > bps[1].Score)
 		suite.Equal(3, len(s.TopK(0)))
@@ -90,25 +108,22 @@ func (suite *StorageTestSuite) TestTopK() {
 
 func (suite *StorageTestSuite) TestUpdate() {
 	for _, s := range suite.storages {
-		p1 := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
-		p2 := &proxy.Proxy{IP: net.ParseIP("5.6.7.8"), Port: 80, Score: 80}
-		s.Insert(p1)
-		s.Insert(p2)
 		// does not exists
 		err := s.Update(&proxy.Proxy{IP: net.ParseIP("6.7.8.9"), Port: 80, Score: 50})
 		suite.Equal(err, ErrProxyDoesNotExists)
 		// normal
-		p1.Score = 90
-		err = s.Update(p1)
+		p := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
+		p.Score = 90
+		err = s.Update(p)
 		bp := s.TopK(1)[0]
 		suite.Nil(err)
-		suite.Equal(p1.IP, bp.IP)
+		suite.Equal(p.IP, bp.IP)
 	}
 }
 
 func (suite *StorageTestSuite) TestInsertOrUpdate() {
 	for _, s := range suite.storages {
-		p := &proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50}
+		p := &proxy.Proxy{IP: net.ParseIP("6.6.6.6"), Port: 80, Score: 50}
 		inserted, err := s.InsertOrUpdate(p)
 		suite.Nil(err)
 		suite.True(inserted)
@@ -124,9 +139,6 @@ func (suite *StorageTestSuite) TestInsertOrUpdate() {
 
 func (suite *StorageTestSuite) TestIter() {
 	for _, s := range suite.storages {
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("1.2.3.4"), Port: 80, Score: 50})
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("2.3.4.5"), Port: 80, Score: 60})
-		s.Insert(&proxy.Proxy{IP: net.ParseIP("3.4.5.6"), Port: 80, Score: 70})
 		total := 0
 		s.Iter(func(pxy *proxy.Proxy) bool {
 			total++
