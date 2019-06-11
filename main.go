@@ -11,7 +11,7 @@ func main() {
 	scheduler := sched.NewScheduler()
 
 	middlemanServer := middleman.NewServer(scheduler.GetStorage())
-	go http.ListenAndServe("0.0.0.0:8081", middlemanServer)
+	http.ListenAndServe("0.0.0.0:8081", middlemanServer)
 
-	scheduler.Start()
+	//scheduler.Start()
 }
