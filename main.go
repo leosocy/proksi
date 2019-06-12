@@ -13,5 +13,5 @@ func main() {
 	middlemanServer := middleman.NewServer(scheduler.GetStorage())
 	http.ListenAndServe("0.0.0.0:8081", middlemanServer)
 
-	//scheduler.Start()
+	scheduler.Start()
 }

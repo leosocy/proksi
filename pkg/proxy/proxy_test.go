@@ -111,3 +111,10 @@ func TestProxy_DetectAnonymity_Elite(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(Elite, pxy.Anon)
 }
+
+func TestProxy_Equal(t *testing.T) {
+	assert := assert.New(t)
+	one, _ := NewProxy("1.2.3.4", "80")
+	another, _ := NewProxy("1.2.3.4", "8080")
+	assert.True(one.Equal(another))
+}
