@@ -15,14 +15,14 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
-// Scheduler responsible for scheduling cooperation between Spider,Checker and Storage.
+// Scheduler responsible for scheduling cooperation between Spider,Checker and Backend.
 type Scheduler struct {
 	spiders          []*spider.Spider
 	cachedChan       proxy.CachedChan
 	scoreChecker     checker.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geoInfoFetcher   proxy.GeoInfoFetcher
-	storage          storage.Storage
+	backend          storage.Backend
 	logger           *logrus.Logger
 }
 
@@ -34,15 +34,15 @@ func NewScheduler() *Scheduler {
 		scoreChecker:     checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
 		reqHeadersGetter: utils.HTTPBinUtil{Timeout: 5 * time.Second},
 		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
-		storage:          storage.NewInMemoryStorage(),
+		backend:          storage.NewInMemoryBackend(),
 		logger:           logrus.New(),
 	}
 	sc.logger.Formatter = &logrus.TextFormatter{FullTimestamp: true}
 	return sc
 }
 
-func (sc *Scheduler) GetStorage() storage.Storage {
-	return sc.storage
+func (sc *Scheduler) GetBackend() storage.Backend {
+	return sc.backend
 }
 
 // Start open the background crawling, detection, inspection tasks,
@@ -72,16 +72,16 @@ func (sc *Scheduler) inspectProxy(pxy *proxy.Proxy) {
 		"score": score,
 	})
 	if score > 0 {
-		if inserted, err := sc.storage.InsertOrUpdate(pxy); err == nil {
+		if inserted, err := sc.backend.InsertOrUpdate(pxy); err == nil {
 			action := "Updated"
 			if inserted {
 				action = "Inserted"
 			}
-			entry.Infof("%s proxy to storage", action)
+			entry.Infof("%s proxy to backend", action)
 		}
 	} else {
-		if err := sc.storage.Delete(pxy.IP); err == nil {
-			entry.Info("Deleted proxy from storage")
+		if err := sc.backend.Delete(pxy.IP); err == nil {
+			entry.Info("Deleted proxy from backend")
 		}
 	}
 }
@@ -94,7 +94,7 @@ func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
 		if err := pxy.DetectAnonymity(sc.reqHeadersGetter); err != nil {
 			entry.Warnf("Failed to detect anonymity, %v", err)
 		} else {
-			if err := sc.storage.Update(pxy); err == nil {
+			if err := sc.backend.Update(pxy); err == nil {
 				entry.Info("Updated anonymity")
 			}
 		}
@@ -103,7 +103,7 @@ func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
 		if err := pxy.DetectGeoInfo(sc.geoInfoFetcher); err != nil {
 			entry.Warnf("Failed to detect geography information, %v", err)
 		} else {
-			if err := sc.storage.Update(pxy); err == nil {
+			if err := sc.backend.Update(pxy); err == nil {
 				entry.Infof("Updated geography information")
 			}
 		}
@@ -115,7 +115,7 @@ func (sc *Scheduler) bgDetections(period time.Duration) {
 	defer ticker.Stop()
 	iterDetections := func() {
 		sc.logger.Info("Start iterating the proxies and detecting anonymity/geo info")
-		sc.storage.Iter(func(pxy *proxy.Proxy) bool {
+		sc.backend.Iter(func(pxy *proxy.Proxy) bool {
 			go sc.completeProxy(pxy)
 			return true
 		})
@@ -133,7 +133,7 @@ func (sc *Scheduler) bgInspection(period time.Duration) {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 	iterInspection := func() {
-		sc.storage.Iter(func(pxy *proxy.Proxy) bool {
+		sc.backend.Iter(func(pxy *proxy.Proxy) bool {
 			go sc.inspectProxy(pxy)
 			return true
 		})
@@ -146,7 +146,7 @@ func (sc *Scheduler) bgInspection(period time.Duration) {
 	}
 }
 
-// bgCrawling when the number of proxies in storage is less than threshold, start crawling.
+// bgCrawling when the number of proxies in backend is less than threshold, start crawling.
 func (sc *Scheduler) bgCrawling(threshold uint) {
 	for _, s := range sc.spiders {
 		go s.Start(sc.cachedChan)

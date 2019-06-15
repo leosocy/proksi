@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
 	"github.com/elazarl/goproxy"
 )
 
@@ -24,7 +23,7 @@ type Server struct {
 	*goproxy.ProxyHttpServer
 }
 
-func NewServer(storage storage.Storage) *Server {
+func NewServer() *Server {
 	ps := goproxy.NewProxyHttpServer()
 	middleman := &Server{
 		Dialer: &net.Dialer{

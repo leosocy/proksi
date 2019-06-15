@@ -26,22 +26,22 @@ func (p *comparableProxy) Less(than rbtree.Item) bool {
 	return p.pxy.Score <= thanP.pxy.Score
 }
 
-// InMemoryStorage is a simple storage.
-type InMemoryStorage struct {
+// InMemoryBackend is a simple local in memory backend.
+type InMemoryBackend struct {
 	m    map[uint64]*proxy.Proxy // map[hash64(IP)]proxy
 	rbt  *rbtree.Rbtree
 	lock sync.RWMutex
 }
 
-// NewInMemoryStorage returns new InMemoryStorage with default configurations.
-func NewInMemoryStorage() *InMemoryStorage {
-	return &InMemoryStorage{
+// NewInMemoryBackend returns new InMemoryBackend with default configurations.
+func NewInMemoryBackend() *InMemoryBackend {
+	return &InMemoryBackend{
 		m:   make(map[uint64]*proxy.Proxy),
 		rbt: rbtree.New(),
 	}
 }
 
-func (s *InMemoryStorage) insert(p *proxy.Proxy) error {
+func (s *InMemoryBackend) insert(p *proxy.Proxy) error {
 	hasher := fnv.New64()
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -53,7 +53,7 @@ func (s *InMemoryStorage) insert(p *proxy.Proxy) error {
 	return nil
 }
 
-func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
+func (s *InMemoryBackend) Insert(p *proxy.Proxy) error {
 	if p == nil || p.Score <= 0 {
 		return ErrProxyInvalid
 	}
@@ -63,7 +63,7 @@ func (s *InMemoryStorage) Insert(p *proxy.Proxy) error {
 	return s.insert(p)
 }
 
-func (s *InMemoryStorage) Select(opts ...SelectOption) ([]*proxy.Proxy, error) {
+func (s *InMemoryBackend) Select(opts ...SelectOption) ([]*proxy.Proxy, error) {
 	sopts := SelectOptions{}
 	for _, opt := range opts {
 		opt(&sopts)
@@ -82,7 +82,7 @@ func (s *InMemoryStorage) Select(opts ...SelectOption) ([]*proxy.Proxy, error) {
 	return proxies[sopts.Offset : sopts.Offset+sopts.Limit], nil
 }
 
-func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
+func (s *InMemoryBackend) Search(ip net.IP) *proxy.Proxy {
 	hasher := fnv.New64()
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -92,7 +92,7 @@ func (s *InMemoryStorage) Search(ip net.IP) *proxy.Proxy {
 	return nil
 }
 
-func (s *InMemoryStorage) delete(p *proxy.Proxy) error {
+func (s *InMemoryBackend) delete(p *proxy.Proxy) error {
 	hasher := fnv.New64()
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -104,7 +104,7 @@ func (s *InMemoryStorage) delete(p *proxy.Proxy) error {
 	return nil
 }
 
-func (s *InMemoryStorage) Delete(ip net.IP) error {
+func (s *InMemoryBackend) Delete(ip net.IP) error {
 	var sp *proxy.Proxy
 	if sp = s.Search(ip); sp == nil {
 		return ErrProxyDoesNotExists
@@ -112,15 +112,14 @@ func (s *InMemoryStorage) Delete(ip net.IP) error {
 	return s.delete(sp)
 }
 
-// Update implements storage.Update.
-func (s *InMemoryStorage) Update(newP *proxy.Proxy) error {
+func (s *InMemoryBackend) Update(newP *proxy.Proxy) error {
 	if err := s.Delete(newP.IP); err != nil {
 		return err
 	}
 	return s.Insert(newP)
 }
 
-func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) (bool, error) {
+func (s *InMemoryBackend) InsertOrUpdate(p *proxy.Proxy) (bool, error) {
 	err := s.Insert(p)
 	switch err {
 	case ErrProxyDuplicated:
@@ -132,13 +131,13 @@ func (s *InMemoryStorage) InsertOrUpdate(p *proxy.Proxy) (bool, error) {
 	}
 }
 
-func (s *InMemoryStorage) Len() uint {
+func (s *InMemoryBackend) Len() uint {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.rbt.Len()
 }
 
-func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
+func (s *InMemoryBackend) TopK(k int) []*proxy.Proxy {
 	proxies := make([]*proxy.Proxy, 0)
 	s.Iter(func(pxy *proxy.Proxy) bool {
 		if k == 0 || len(proxies) < k {
@@ -150,7 +149,7 @@ func (s *InMemoryStorage) TopK(k int) []*proxy.Proxy {
 	return proxies
 }
 
-func (s *InMemoryStorage) Iter(iter Iterator) {
+func (s *InMemoryBackend) Iter(iter Iterator) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	s.rbt.Descend(s.rbt.Max(), func(item rbtree.Item) bool {

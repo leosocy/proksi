@@ -10,7 +10,7 @@ import (
 func main() {
 	scheduler := sched.NewScheduler()
 
-	middlemanServer := middleman.NewServer(scheduler.GetStorage())
+	middlemanServer := middleman.NewServer()
 	go http.ListenAndServe("0.0.0.0:8081", middlemanServer)
 
 	scheduler.Start()
