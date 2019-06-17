@@ -2,12 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package storage
+package backend
 
 import (
 	"errors"
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 	"net"
+
+	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 )
@@ -32,7 +34,7 @@ type Backend interface {
 	Delete(ip net.IP) error
 	Search(ip net.IP) *proxy.Proxy
 	// Select returns proxies after filter with options
-	Select(opts ...SelectOption) ([]*proxy.Proxy, error)
+	Select(opts ...storage.SelectOption) ([]*proxy.Proxy, error)
 	Len() uint
 	// TopK returns the first K proxies order by score descend.
 	// If k is equal to 0, return all proxies in the backend
@@ -74,10 +76,10 @@ func WithNotifier(backend Backend, notifier pubsub.Notifier) BackendNotifier {
 
 type BaseWatcher struct {
 	recvCh  chan<- *proxy.Proxy
-	filters []Filter
+	filters []storage.Filter
 }
 
-func NewBaseWatcher(recvCh chan<- *proxy.Proxy, fn ...Filter) *BaseWatcher {
+func NewBaseWatcher(recvCh chan<- *proxy.Proxy, fn ...storage.Filter) *BaseWatcher {
 	return &BaseWatcher{
 		recvCh:  recvCh,
 		filters: fn,

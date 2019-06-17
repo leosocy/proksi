@@ -2,12 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package storage
+package backend
 
 import (
 	"hash/fnv"
 	"net"
 	"sync"
+
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
 
 	"github.com/HuKeping/rbtree"
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
@@ -63,8 +65,8 @@ func (s *InMemoryBackend) Insert(p *proxy.Proxy) error {
 	return s.insert(p)
 }
 
-func (s *InMemoryBackend) Select(opts ...SelectOption) ([]*proxy.Proxy, error) {
-	sopts := SelectOptions{}
+func (s *InMemoryBackend) Select(opts ...storage.SelectOption) ([]*proxy.Proxy, error) {
+	sopts := storage.SelectOptions{}
 	for _, opt := range opts {
 		opt(&sopts)
 	}

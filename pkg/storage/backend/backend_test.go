@@ -2,15 +2,17 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package storage
+package backend
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"net"
 	"testing"
+
+	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 type BackendTestSuite struct {
@@ -49,25 +51,25 @@ func (suite *BackendTestSuite) TestSelect() {
 		suite.Equal(s.Len(), uint(len(pxys)))
 		suite.Nil(err)
 		// with limit
-		pxys, err = s.Select(WithLimit(1))
+		pxys, err = s.Select(storage.WithLimit(1))
 		suite.Equal(1, len(pxys))
 		suite.Nil(err)
 		// with offset
-		pxys, err = s.Select(WithOffset(1))
+		pxys, err = s.Select(storage.WithOffset(1))
 		suite.Equal(2, len(pxys))
 		suite.Nil(err)
 		// filter score
-		pxys, err = s.Select(WithFilter(FilterScore(60)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(60)))
 		suite.Equal(1, len(pxys))
 		suite.True(pxys[0].Score >= 60)
 		// filter score none available
-		pxys, err = s.Select(WithFilter(FilterScore(100)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(100)))
 		suite.NotNil(err)
 		// filter and offset, limit
-		pxys, err = s.Select(WithFilter(FilterScore(50)), WithLimit(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithLimit(10))
 		suite.Equal(2, len(pxys))
 		// filter and offset out of range
-		pxys, err = s.Select(WithFilter(FilterScore(50)), WithOffset(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithOffset(10))
 		suite.NotNil(err)
 	}
 }
@@ -159,7 +161,7 @@ func TestNotifiableBackendWithBaseWatcher(t *testing.T) {
 	backend := NewInMemoryBackend()
 	nb := WithNotifier(backend, &pubsub.BaseNotifier{})
 	pCh := make(chan *proxy.Proxy)
-	watcher := NewBaseWatcher(pCh, FilterScore(80))
+	watcher := NewBaseWatcher(pCh, storage.FilterScore(80))
 	nb.Attach(watcher)
 
 	recvCount := 0
