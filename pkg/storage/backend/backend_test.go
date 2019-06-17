@@ -9,9 +9,7 @@ import (
 	"testing"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 	"github.com/Leosocy/IntelliProxy/pkg/storage"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -87,11 +85,11 @@ func (suite *BackendTestSuite) TestSearch() {
 func (suite *BackendTestSuite) TestDelete() {
 	for _, s := range suite.backends {
 		// does not exists
-		err := s.Delete(net.ParseIP("8.8.8.8"))
+		err := s.Delete(&proxy.Proxy{IP: net.ParseIP("8.8.8.8")})
 		suite.Equal(err, ErrProxyDoesNotExists)
 		// normal
 		bLen := s.Len()
-		err = s.Delete(net.ParseIP("5.6.7.8"))
+		err = s.Delete(&proxy.Proxy{IP: net.ParseIP("5.6.7.8")})
 		searchP := s.Search(net.ParseIP("5.6.7.8"))
 		suite.Nil(err)
 		suite.Nil(searchP)
@@ -155,40 +153,4 @@ func (suite *BackendTestSuite) TestIter() {
 
 func TestBackendTestSuite(t *testing.T) {
 	suite.Run(t, new(BackendTestSuite))
-}
-
-func TestNotifiableBackendWithBaseWatcher(t *testing.T) {
-	backend := NewInMemoryBackend()
-	nb := WithNotifier(backend, &pubsub.BaseNotifier{})
-	pCh := make(chan *proxy.Proxy)
-	watcher := NewBaseWatcher(pCh, storage.FilterScore(80))
-	nb.Attach(watcher)
-
-	recvCount := 0
-	exitCh := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-pCh:
-				recvCount++
-			case <-exitCh:
-				return
-			}
-		}
-	}()
-
-	pxy, _ := proxy.NewProxy("1.2.3.4", "80")
-	// insert a new proxy pass filters
-	nb.Insert(pxy)
-	// update a exists proxy
-	nb.Update(pxy)
-	pxy.Score = 80
-	nb.InsertOrUpdate(pxy)
-	// insert or update new proxy not pass filters
-	anotherPxy, _ := proxy.NewProxy("5.6.7.8", "80")
-	anotherPxy.AddScore(-50)
-	nb.InsertOrUpdate(anotherPxy)
-
-	exitCh <- struct{}{}
-	assert.Equal(t, 1, recvCount)
 }

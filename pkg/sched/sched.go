@@ -81,7 +81,7 @@ func (sc *Scheduler) inspectProxy(pxy *proxy.Proxy) {
 			entry.Infof("%s proxy to backend", action)
 		}
 	} else {
-		if err := sc.backend.Delete(pxy.IP); err == nil {
+		if err := sc.backend.Delete(pxy); err == nil {
 			entry.Info("Deleted proxy from backend")
 		}
 	}

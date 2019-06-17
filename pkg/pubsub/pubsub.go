@@ -18,8 +18,8 @@ type Notifier interface {
 // Watcher is an interface that receive notification that
 // the notifier notify when the data changes.
 type Watcher interface {
-	// Update is called by Notifier.Notify.
-	Update(obj interface{})
+	// Receipt is called by Notifier.Notify.
+	Receipt(obj interface{})
 }
 
 // BaseNotifier is a base implementation of the Notifier interface
@@ -65,7 +65,7 @@ func (n *BaseNotifier) Notify(obj interface{}) {
 	for _, w := range n.watchers {
 		go func(w Watcher) {
 			defer wg.Done()
-			w.Update(obj)
+			w.Receipt(obj)
 		}(w)
 	}
 	n.mu.RUnlock()

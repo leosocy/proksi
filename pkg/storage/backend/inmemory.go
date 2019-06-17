@@ -106,16 +106,16 @@ func (s *InMemoryBackend) delete(p *proxy.Proxy) error {
 	return nil
 }
 
-func (s *InMemoryBackend) Delete(ip net.IP) error {
+func (s *InMemoryBackend) Delete(p *proxy.Proxy) error {
 	var sp *proxy.Proxy
-	if sp = s.Search(ip); sp == nil {
+	if sp = s.Search(p.IP); sp == nil {
 		return ErrProxyDoesNotExists
 	}
 	return s.delete(sp)
 }
 
 func (s *InMemoryBackend) Update(newP *proxy.Proxy) error {
-	if err := s.Delete(newP.IP); err != nil {
+	if err := s.Delete(newP); err != nil {
 		return err
 	}
 	return s.Insert(newP)

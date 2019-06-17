@@ -8,7 +8,6 @@ import (
 	"errors"
 	"net"
 
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 	"github.com/Leosocy/IntelliProxy/pkg/storage"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
@@ -31,7 +30,7 @@ type Backend interface {
 	Insert(p *proxy.Proxy) error
 	Update(newP *proxy.Proxy) error
 	InsertOrUpdate(p *proxy.Proxy) (inserted bool, err error)
-	Delete(ip net.IP) error
+	Delete(p *proxy.Proxy) error
 	Search(ip net.IP) *proxy.Proxy
 	// Select returns proxies after filter with options
 	Select(opts ...storage.SelectOption) ([]*proxy.Proxy, error)
@@ -40,61 +39,4 @@ type Backend interface {
 	// If k is equal to 0, return all proxies in the backend
 	TopK(k int) []*proxy.Proxy
 	Iter(iter Iterator)
-}
-
-// BackendNotifier is an interface that notify watchers when data changes in backend.
-type BackendNotifier interface {
-	Backend
-	pubsub.Notifier
-}
-
-// notifiableBackend implements BackendNotifier interface.
-// It wraps the Backend's `Insert/InsertOrUpdate` method to send Notify when the new proxy inserted.
-type notifiableBackend struct {
-	Backend
-	pubsub.Notifier
-}
-
-func (nb *notifiableBackend) Insert(p *proxy.Proxy) (err error) {
-	if err = nb.Backend.Insert(p); err == nil {
-		nb.Notify(p)
-	}
-	return
-}
-
-func (nb *notifiableBackend) InsertOrUpdate(p *proxy.Proxy) (inserted bool, err error) {
-	if inserted, err = nb.Backend.InsertOrUpdate(p); inserted && err == nil {
-		nb.Notify(p)
-	}
-	return
-}
-
-// WithNotifier returns a notifiable backend with notifier
-func WithNotifier(backend Backend, notifier pubsub.Notifier) BackendNotifier {
-	return &notifiableBackend{backend, notifier}
-}
-
-type BaseWatcher struct {
-	recvCh  chan<- *proxy.Proxy
-	filters []storage.Filter
-}
-
-func NewBaseWatcher(recvCh chan<- *proxy.Proxy, fn ...storage.Filter) *BaseWatcher {
-	return &BaseWatcher{
-		recvCh:  recvCh,
-		filters: fn,
-	}
-}
-
-// Update implements pubsub.Watcher interface with filters.
-func (w *BaseWatcher) Update(obj interface{}) {
-	pxy := obj.(*proxy.Proxy)
-	proxies := []*proxy.Proxy{pxy}
-	for _, filter := range w.filters {
-		proxies = filter(proxies)
-	}
-	if len(proxies) == 0 {
-		return
-	}
-	w.recvCh <- proxies[0]
 }

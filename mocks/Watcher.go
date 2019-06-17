@@ -9,7 +9,7 @@ type Watcher struct {
 	mock.Mock
 }
 
-// Update provides a mock function with given fields: obj
-func (_m *Watcher) Update(obj interface{}) {
+// Receipt provides a mock function with given fields: obj
+func (_m *Watcher) Receipt(obj interface{}) {
 	_m.Called(obj)
 }
