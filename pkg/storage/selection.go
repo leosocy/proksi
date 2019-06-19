@@ -26,7 +26,7 @@ func WithLimit(limit int) SelectOption {
 	}
 }
 
-// WithLimit sets the proxies return from offset position in storage
+// WithLimit sets the proxies return from offset position in backend
 func WithOffset(offset int) SelectOption {
 	return func(options *SelectOptions) {
 		options.Offset = offset
