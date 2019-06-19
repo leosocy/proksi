@@ -2,28 +2,28 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package storage
+package backend
 
 import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/stretchr/testify/suite"
 )
 
-type StorageTestSuite struct {
+type BackendTestSuite struct {
 	suite.Suite
-	storages []Storage
+	backends []Backend
 }
 
-func (suite *StorageTestSuite) SetupTest() {
-	suite.storages = []Storage{
-		NewInMemoryStorage(),
+func (suite *BackendTestSuite) SetupTest() {
+	suite.backends = []Backend{
+		NewInMemoryBackend(),
 	}
 	// insert and assert some proxies
-	for _, s := range suite.storages {
+	for _, s := range suite.backends {
 		// insert invalid proxy
 		err := s.Insert(nil)
 		suite.Equal(err, ErrProxyInvalid)
@@ -42,38 +42,38 @@ func (suite *StorageTestSuite) SetupTest() {
 	}
 }
 
-func (suite *StorageTestSuite) TestSelect() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestSelect() {
+	for _, s := range suite.backends {
 		// no options
 		pxys, err := s.Select()
 		suite.Equal(s.Len(), uint(len(pxys)))
 		suite.Nil(err)
 		// with limit
-		pxys, err = s.Select(WithLimit(1))
+		pxys, err = s.Select(storage.WithLimit(1))
 		suite.Equal(1, len(pxys))
 		suite.Nil(err)
 		// with offset
-		pxys, err = s.Select(WithOffset(1))
+		pxys, err = s.Select(storage.WithOffset(1))
 		suite.Equal(2, len(pxys))
 		suite.Nil(err)
 		// filter score
-		pxys, err = s.Select(WithFilter(FilterScore(60)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(60)))
 		suite.Equal(1, len(pxys))
 		suite.True(pxys[0].Score >= 60)
 		// filter score none available
-		pxys, err = s.Select(WithFilter(FilterScore(100)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(100)))
 		suite.NotNil(err)
 		// filter and offset, limit
-		pxys, err = s.Select(WithFilter(FilterScore(50)), WithLimit(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithLimit(10))
 		suite.Equal(2, len(pxys))
 		// filter and offset out of range
-		pxys, err = s.Select(WithFilter(FilterScore(50)), WithOffset(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithOffset(10))
 		suite.NotNil(err)
 	}
 }
 
-func (suite *StorageTestSuite) TestSearch() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestSearch() {
+	for _, s := range suite.backends {
 		pxy := s.Search(net.ParseIP("5.6.7.8"))
 		suite.Equal(pxy.IP.String(), "5.6.7.8")
 		// not found
@@ -82,14 +82,14 @@ func (suite *StorageTestSuite) TestSearch() {
 	}
 }
 
-func (suite *StorageTestSuite) TestDelete() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestDelete() {
+	for _, s := range suite.backends {
 		// does not exists
-		err := s.Delete(net.ParseIP("8.8.8.8"))
+		err := s.Delete(&proxy.Proxy{IP: net.ParseIP("8.8.8.8")})
 		suite.Equal(err, ErrProxyDoesNotExists)
 		// normal
 		bLen := s.Len()
-		err = s.Delete(net.ParseIP("5.6.7.8"))
+		err = s.Delete(&proxy.Proxy{IP: net.ParseIP("5.6.7.8")})
 		searchP := s.Search(net.ParseIP("5.6.7.8"))
 		suite.Nil(err)
 		suite.Nil(searchP)
@@ -97,8 +97,8 @@ func (suite *StorageTestSuite) TestDelete() {
 	}
 }
 
-func (suite *StorageTestSuite) TestTopK() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestTopK() {
+	for _, s := range suite.backends {
 		bps := s.TopK(2)
 		suite.Equal(2, len(bps))
 		suite.True(bps[0].Score > bps[1].Score)
@@ -106,8 +106,8 @@ func (suite *StorageTestSuite) TestTopK() {
 	}
 }
 
-func (suite *StorageTestSuite) TestUpdate() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestUpdate() {
+	for _, s := range suite.backends {
 		// does not exists
 		err := s.Update(&proxy.Proxy{IP: net.ParseIP("6.7.8.9"), Port: 80, Score: 50})
 		suite.Equal(err, ErrProxyDoesNotExists)
@@ -121,8 +121,8 @@ func (suite *StorageTestSuite) TestUpdate() {
 	}
 }
 
-func (suite *StorageTestSuite) TestInsertOrUpdate() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestInsertOrUpdate() {
+	for _, s := range suite.backends {
 		p := &proxy.Proxy{IP: net.ParseIP("6.6.6.6"), Port: 80, Score: 50}
 		inserted, err := s.InsertOrUpdate(p)
 		suite.Nil(err)
@@ -137,8 +137,8 @@ func (suite *StorageTestSuite) TestInsertOrUpdate() {
 	}
 }
 
-func (suite *StorageTestSuite) TestIter() {
-	for _, s := range suite.storages {
+func (suite *BackendTestSuite) TestIter() {
+	for _, s := range suite.backends {
 		total := 0
 		s.Iter(func(pxy *proxy.Proxy) bool {
 			total++
@@ -151,6 +151,6 @@ func (suite *StorageTestSuite) TestIter() {
 	}
 }
 
-func TestStorageTestSuite(t *testing.T) {
-	suite.Run(t, new(StorageTestSuite))
+func TestBackendTestSuite(t *testing.T) {
+	suite.Run(t, new(BackendTestSuite))
 }

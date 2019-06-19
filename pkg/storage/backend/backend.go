@@ -2,39 +2,41 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package storage
+package backend
 
 import (
 	"errors"
 	"net"
 
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 )
 
-// Errors occur when using storage.
+// Errors occur when using backend.
 var (
 	ErrProxyInvalid       = errors.New("proxy is nil or score <= 0")
-	ErrProxyDuplicated    = errors.New("proxy is already in storage")
+	ErrProxyDuplicated    = errors.New("proxy is already in backend")
 	ErrProxyDoesNotExists = errors.New("proxy doesn't exists")
 	ErrProxyNoneAvailable = errors.New("proxy none available")
 )
 
-// Iterator is the function which will be call for each proxy in storage.
+// Iterator is the function which will be call for each proxy in backend.
 // It will stop when the iterator returns false.
 type Iterator func(pxy *proxy.Proxy) bool
 
-// Storage is a container for proxies.
-type Storage interface {
+// Backend is an interface that store and manipulate proxies
+type Backend interface {
 	Insert(p *proxy.Proxy) error
-	// Select returns proxies after filter with options
-	Select(opts ...SelectOption) ([]*proxy.Proxy, error)
 	Update(newP *proxy.Proxy) error
 	InsertOrUpdate(p *proxy.Proxy) (inserted bool, err error)
+	Delete(p *proxy.Proxy) error
 	Search(ip net.IP) *proxy.Proxy
-	Delete(ip net.IP) error
+	// Select returns proxies after filter with options
+	Select(opts ...storage.SelectOption) ([]*proxy.Proxy, error)
 	Len() uint
 	// TopK returns the first K proxies order by score descend.
-	// If k is equal to 0, return all proxies in the storage
+	// If k is equal to 0, return all proxies in the backend
 	TopK(k int) []*proxy.Proxy
 	Iter(iter Iterator)
 }
