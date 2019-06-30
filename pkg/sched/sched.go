@@ -5,6 +5,7 @@
 package sched
 
 import (
+	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 	"time"
 
 	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
@@ -23,7 +24,7 @@ type Scheduler struct {
 	scoreChecker     checker.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geoInfoFetcher   proxy.GeoInfoFetcher
-	backend          backend.Backend
+	backend          backend.NotifyBackend
 	logger           *logrus.Logger
 }
 
@@ -35,14 +36,14 @@ func NewScheduler() *Scheduler {
 		scoreChecker:     checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
 		reqHeadersGetter: utils.HTTPBinUtil{Timeout: 5 * time.Second},
 		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
-		backend:          backend.NewInMemoryBackend(),
+		backend:          backend.WithNotifier(backend.NewInMemoryBackend(), &pubsub.BaseNotifier{}),
 		logger:           logrus.New(),
 	}
 	sc.logger.Formatter = &logrus.TextFormatter{FullTimestamp: true}
 	return sc
 }
 
-func (sc *Scheduler) GetBackend() backend.Backend {
+func (sc *Scheduler) GetBackend() backend.NotifyBackend {
 	return sc.backend
 }
 

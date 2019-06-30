@@ -16,22 +16,11 @@ import (
 func TestInsertionWatcher(t *testing.T) {
 	backend := NewInMemoryBackend()
 	nb := WithNotifier(backend, &pubsub.BaseNotifier{})
-	pCh := make(chan *proxy.Proxy)
-	watcher := NewInsertionWatcher(pCh, storage.FilterScore(80))
-	nb.Attach(watcher)
-
 	recvCount := 0
-	exitCh := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-pCh:
-				recvCount++
-			case <-exitCh:
-				return
-			}
-		}
-	}()
+	watcher := NewInsertionWatcher(func(pxy *proxy.Proxy) {
+		recvCount++
+	}, storage.FilterScore(80))
+	nb.Attach(watcher)
 
 	pxy, _ := proxy.NewProxy("1.2.3.4", "80")
 	// insert a new proxy pass filters
@@ -47,6 +36,5 @@ func TestInsertionWatcher(t *testing.T) {
 	// delete a proxy
 	nb.Delete(pxy)
 	// assert only notify when insert pxy
-	exitCh <- struct{}{}
 	assert.Equal(t, 1, recvCount)
 }

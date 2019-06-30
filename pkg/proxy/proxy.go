@@ -49,8 +49,7 @@ type Proxy struct {
 	lock      sync.RWMutex
 }
 
-// NewProxy passes in the ip, port,
-// calculates the other field values,
+// NewProxy passes in the ip, port, calculates the other field values,
 // and returns an initialized Proxy object
 func NewProxy(ip, port string) (*Proxy, error) {
 	if ip == "" || port == "" {
@@ -151,4 +150,12 @@ func (p *Proxy) URL() string {
 		return ""
 	}
 	return fmt.Sprintf("http://%s:%d", p.IP.String(), p.Port)
+}
+
+func (p *Proxy) String() string {
+	return p.URL()
+}
+
+func (p *Proxy) Equal(to *Proxy) bool {
+	return p.IP.Equal(to.IP)
 }
