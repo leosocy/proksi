@@ -6,7 +6,6 @@ package utils
 
 import "time"
 
-// Limiter
 type Limiter interface {
 	Init()
 	Enter()

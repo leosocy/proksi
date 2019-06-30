@@ -37,6 +37,8 @@ func TestSessionPoolManipulate(t *testing.T) {
 	// remove
 	pool.remove(one)
 	assert.NotContains(pool.sessions, one)
+	pool.remove(pool.new(pxyOne, newDefaultSessionTransport()))
+	assert.NotEmpty(pool.sessions)
 	pool.remove(another)
 	assert.NotContains(pool.sessions, another)
 	assert.Empty(pool.sessions)

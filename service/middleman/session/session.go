@@ -149,20 +149,11 @@ func (pool *sessionPool) removeSessionLocked(s *Session) {
 		panic("nil Session")
 	}
 	s.close()
-	sessions := pool.sessions
-	switch len(sessions) {
-	case 0:
-		// do nothing
-	case 1:
-		pool.sessions = []*Session{}
-	default:
-		for i, v := range sessions {
-			if !v.pxy.Equal(s.pxy) {
-				continue
-			}
-			copy(sessions[i:], sessions[i+1:])
-			pool.sessions = sessions[:len(sessions)-1]
-			break
+	for idx, v := range pool.sessions {
+		if v.pxy.Equal(s.pxy) {
+			copy(pool.sessions[idx:], pool.sessions[idx+1:])
+			pool.sessions = pool.sessions[:len(pool.sessions)-1]
+			return
 		}
 	}
 }
@@ -178,7 +169,6 @@ type Manager struct {
 	pool         *sessionPool
 	pickStrategy Strategy
 	pxyCh        chan *proxy.Proxy
-
 }
 
 func NewManager(nb backend.NotifyBackend, strategy Strategy) *Manager {
