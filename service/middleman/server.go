@@ -5,11 +5,10 @@
 package middleman
 
 import (
+	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
+	"github.com/Leosocy/IntelliProxy/service/middleman/session"
 	"net/http"
 
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
 	"github.com/elazarl/goproxy"
 )
 
@@ -21,24 +20,21 @@ import (
 // And, this is safe because the middleman server is usually deployed
 // as a sidecar with crawler program together.
 type Server struct {
-	sessionP *sessionPool
+	sm *session.Manager
 	*goproxy.ProxyHttpServer
 }
 
-func NewServer(storage storage.Storage) *Server {
+func NewServer(nb backend.NotifyBackend) *Server {
 	s := &Server{
-		sessionP:        &sessionPool{},
+		sm:              session.NewManager(nb, session.Random),
 		ProxyHttpServer: goproxy.NewProxyHttpServer(),
 	}
 	s.Verbose = true
-	pxy, _ := proxy.NewProxy("47.94.135.32", "8118")
-	session := s.sessionP.new(pxy, newDefaultSessionTransport())
-	s.sessionP.put(session)
 	s.OnRequest().HandleConnect(goproxy.AlwaysMitm)
-	// TODO:
-	//  1. 选择合适的session，并且设置ctx.RoundTripper
 	s.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (request *http.Request, response *http.Response) {
-		ctx.RoundTripper, _ = s.sessionP.get()
+		if rt, err := s.sm.PickOne(); err == nil {
+			ctx.RoundTripper = rt
+		}
 		return req, nil
 	})
 	return s

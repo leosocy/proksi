@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package middleman
+package session
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestSessionPoolManipulate(t *testing.T) {
 	assert := assert.New(t)
 	pool := &sessionPool{}
 	// get when pool empty
-	s, err := pool.get()
+	s, err := pool.randomGet()
 	assert.Nil(s)
 	assert.Equal(err, errSessionUnavailable)
 	// new two sessions
@@ -31,7 +31,7 @@ func TestSessionPoolManipulate(t *testing.T) {
 	pool.put(another)
 	assert.Equal(2, len(pool.sessions))
 	// get
-	s, err = pool.get()
+	s, err = pool.randomGet()
 	assert.NotNil(s)
 	assert.Nil(err)
 	// remove

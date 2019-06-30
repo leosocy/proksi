@@ -82,14 +82,14 @@ func WithNotifier(backend Backend, notifier pubsub.Notifier) NotifyBackend {
 // InsertionWatcher only interested in the new proxy inserted event,
 // and will notify when the proxy passed filtered if filters set.
 type InsertionWatcher struct {
-	recvCh  chan<- *proxy.Proxy
-	filters []storage.Filter
+	callback func(*proxy.Proxy)
+	filters  []storage.Filter
 }
 
-func NewInsertionWatcher(recvCh chan<- *proxy.Proxy, fn ...storage.Filter) *InsertionWatcher {
+func NewInsertionWatcher(callback func(*proxy.Proxy), fn ...storage.Filter) *InsertionWatcher {
 	return &InsertionWatcher{
-		recvCh:  recvCh,
-		filters: fn,
+		callback: callback,
+		filters:  fn,
 	}
 }
 
@@ -108,5 +108,5 @@ func (w *InsertionWatcher) receipt(e *Event) {
 	if len(proxies) == 0 {
 		return
 	}
-	w.recvCh <- proxies[0]
+	w.callback(proxies[0])
 }
