@@ -40,34 +40,56 @@ func TestEndpointsManipulate(t *testing.T) {
 	assert.Len(eps.store, len(endpointsData))
 	eps.del(simpleEndpoint{8})
 	assert.Len(eps.store, len(endpointsData)-1)
+	assert.NotContains(eps.indices, simpleEndpoint{8})
+	assert.Equal(3, eps.indices[simpleEndpoint{w: 16}])
 }
 
 func BenchmarkEndpointsManipulate(b *testing.B) {
 	eps := newEndpoints()
 	b.Run("add", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			eps.add(simpleEndpoint{w: i})
+			eps.add(endpointsData[i%len(endpointsData)])
 		}
 	})
 	b.Run("del", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			eps.del(simpleEndpoint{w: i})
+			eps.del(endpointsData[i%len(endpointsData)])
 		}
 	})
 }
 
 func TestLoadBalancerSelect(t *testing.T) {
 	lbs := map[string]LoadBalancer{
-		"Random":     NewLoadBalancer(Random, endpointsData...),
-		"RoundRobin": NewLoadBalancer(RoundRobin, endpointsData...),
+		"Random":             NewLoadBalancer(Random, endpointsData...),
+		"RoundRobin":         NewLoadBalancer(RoundRobin, endpointsData...),
 		"WeightedRoundRobin": NewLoadBalancer(WeightedRoundRobin, endpointsData...),
 	}
 	for name, lb := range lbs {
 		stats := make(map[string]int)
 		for i := 0; i < 5*len(endpointsData); i++ {
 			ep := lb.Select()
+			lb.DelEndpoint(ep)
+			lb.AddEndpoint(ep)
 			stats[ep.String()]++
 		}
+		fmt.Printf("%s %+v\n", name, stats)
+	}
+}
+
+func BenchmarkLoadBalancerSelect(b *testing.B) {
+	lbs := map[string]LoadBalancer{
+		"Random":             NewLoadBalancer(Random, endpointsData...),
+		"RoundRobin":         NewLoadBalancer(RoundRobin, endpointsData...),
+		"WeightedRoundRobin": NewLoadBalancer(WeightedRoundRobin, endpointsData...),
+	}
+	for name, lb := range lbs {
+		stats := make(map[string]int, len(lbs))
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ep := lb.Select()
+				stats[ep.String()]++
+			}
+		})
 		fmt.Printf("%s %+v\n", name, stats)
 	}
 }

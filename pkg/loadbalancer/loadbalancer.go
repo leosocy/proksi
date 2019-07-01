@@ -46,7 +46,13 @@ func (es *endpoints) add(e Endpoint) {
 		return
 	}
 	es.store = append(es.store, e)
-	es.indices[e] = len(es.store) - 1
+	es.adjust(len(es.store) - 1)
+}
+
+func (es *endpoints) adjust(from int) {
+	for i, e := range es.store[from:] {
+		es.indices[e] = from + i
+	}
 }
 
 func (es *endpoints) del(e Endpoint) {
@@ -56,6 +62,7 @@ func (es *endpoints) del(e Endpoint) {
 		copy(es.store[idx:], es.store[idx+1:])
 		es.store = es.store[:len(es.store)-1]
 		delete(es.indices, e)
+		es.adjust(idx)
 	}
 }
 
@@ -69,6 +76,8 @@ const (
 
 type LoadBalancer interface {
 	Select() Endpoint
+	AddEndpoint(e Endpoint)
+	DelEndpoint(e Endpoint)
 }
 
 type base struct {
