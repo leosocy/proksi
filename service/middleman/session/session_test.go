@@ -14,10 +14,6 @@ import (
 func TestSessionPoolManipulate(t *testing.T) {
 	assert := assert.New(t)
 	pool := &sessionPool{}
-	// get when pool empty
-	s, err := pool.randomGet()
-	assert.Nil(s)
-	assert.Equal(err, errSessionUnavailable)
 	// new two sessions
 	pxyOne, _ := proxy.NewProxy("1.2.3.4", "8888")
 	pxyAnother, _ := proxy.NewProxy("5.6.7.8", "9999")
@@ -30,10 +26,6 @@ func TestSessionPoolManipulate(t *testing.T) {
 	pool.put(one)
 	pool.put(another)
 	assert.Equal(2, len(pool.sessions))
-	// get
-	s, err = pool.randomGet()
-	assert.NotNil(s)
-	assert.Nil(err)
 	// remove
 	pool.remove(one)
 	assert.NotContains(pool.sessions, one)

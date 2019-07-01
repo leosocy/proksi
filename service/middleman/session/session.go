@@ -5,16 +5,14 @@
 package session
 
 import (
-	"fmt"
+	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
 	"github.com/Leosocy/IntelliProxy/pkg/storage"
 	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
-	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
@@ -54,20 +52,21 @@ func (s *Session) RoundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *htt
 	return
 }
 
+// Weight implements the Endpoint.Weight interface.
+func (s *Session) Weight() int {
+	return int(s.pxy.Score)
+}
+
+func (s *Session) String() string {
+	return s.pxy.String()
+}
+
 func (s *Session) close() {
 	s.tr.CloseIdleConnections()
 }
 
-type reqKey struct {
-	scheme, host string
-}
-
-func (k reqKey) String() string {
-	return fmt.Sprintf("%s|%s", k.scheme, k.host)
-}
-
 var (
-	errSessionUnavailable = errors.New("Session unavailable")
+	ErrSessionUnavailable = errors.New("Session unavailable")
 )
 
 func newDefaultSessionTransport() *http.Transport {
@@ -116,26 +115,6 @@ func (pool *sessionPool) put(s *Session) {
 	pool.sessions = append(pool.sessions, s)
 }
 
-func (pool *sessionPool) randomGet() (*Session, error) {
-	pool.sessionMu.RLock()
-	defer pool.sessionMu.RUnlock()
-	if len(pool.sessions) == 0 {
-		return nil, errSessionUnavailable
-	}
-	i := rand.Int() % len(pool.sessions)
-	return pool.sessions[i], nil
-}
-
-func (pool *sessionPool) roundRobinGet() (*Session, error) {
-	pool.sessionMu.RLock()
-	defer pool.sessionMu.RUnlock()
-	if len(pool.sessions) == 0 {
-		return nil, errSessionUnavailable
-	}
-	defer atomic.AddUint64(&pool.roundRobinStart, 1)
-	return pool.sessions[pool.roundRobinStart%uint64(len(pool.sessions))], nil
-}
-
 // remove remove Session from pool
 func (pool *sessionPool) remove(s *Session) {
 	pool.sessionMu.Lock()
@@ -158,24 +137,17 @@ func (pool *sessionPool) removeSessionLocked(s *Session) {
 	}
 }
 
-type Strategy uint8
-
-const (
-	Random Strategy = iota
-	RoundRobin
-)
-
 type Manager struct {
-	pool         *sessionPool
-	pickStrategy Strategy
-	pxyCh        chan *proxy.Proxy
+	pool  *sessionPool
+	lb    loadbalancer.LoadBalancer
+	pxyCh chan *proxy.Proxy
 }
 
-func NewManager(nb backend.NotifyBackend, strategy Strategy) *Manager {
+func NewManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy) *Manager {
 	sm := &Manager{
-		pool:         &sessionPool{},
-		pickStrategy: strategy,
-		pxyCh:        make(chan *proxy.Proxy, 128),
+		pool:  &sessionPool{},
+		lb:    loadbalancer.NewLoadBalancer(strategy),
+		pxyCh: make(chan *proxy.Proxy, 128),
 	}
 	nb.Attach(backend.NewInsertionWatcher(func(pxy *proxy.Proxy) {
 		sm.pxyCh <- pxy
@@ -191,18 +163,16 @@ func (m *Manager) init() {
 			case pxy := <-m.pxyCh:
 				session := m.pool.new(pxy, newDefaultSessionTransport())
 				m.pool.put(session)
+				m.lb.AddEndpoint(session)
 			}
 		}
 	}()
 }
 
 func (m *Manager) PickOne() (*Session, error) {
-	switch m.pickStrategy {
-	case Random:
-		return m.pool.randomGet()
-	case RoundRobin:
-		return m.pool.roundRobinGet()
-	default:
-		return nil, errors.New("unknown strategy")
+	endpoint := m.lb.Select()
+	if endpoint == nil {
+		return nil, ErrSessionUnavailable
 	}
+	return endpoint.(*Session), nil
 }

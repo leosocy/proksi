@@ -153,7 +153,7 @@ func (p *Proxy) URL() string {
 }
 
 func (p *Proxy) String() string {
-	return p.URL()
+	return p.IP.String()
 }
 
 func (p *Proxy) Equal(to *Proxy) bool {

@@ -5,6 +5,7 @@
 package middleman
 
 import (
+	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
 	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
 	"github.com/Leosocy/IntelliProxy/service/middleman/session"
 	"net/http"
@@ -26,7 +27,7 @@ type Server struct {
 
 func NewServer(nb backend.NotifyBackend) *Server {
 	s := &Server{
-		sm:              session.NewManager(nb, session.Random),
+		sm:              session.NewManager(nb, loadbalancer.WeightedRoundRobin),
 		ProxyHttpServer: goproxy.NewProxyHttpServer(),
 	}
 	s.Verbose = true
