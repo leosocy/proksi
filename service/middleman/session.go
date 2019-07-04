@@ -2,18 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package session
+package middleman
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
-	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
 	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
-	"sync"
 	"time"
+
+	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
+	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
 
 	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 	"github.com/Sirupsen/logrus"
@@ -30,6 +30,17 @@ type Session struct {
 	tr  *http.Transport
 }
 
+func NewSession(pxy *proxy.Proxy, tr *http.Transport) *Session {
+	session := &Session{
+		pxy: pxy,
+		tr:  tr,
+	}
+	session.tr.Proxy = func(request *http.Request) (url *url.URL, e error) {
+		return url.Parse(pxy.URL())
+	}
+	return session
+}
+
 func (s *Session) newTrace(req *http.Request) *httptrace.ClientTrace {
 	tracer := &httptrace.ClientTrace{
 		GotConn: func(info httptrace.GotConnInfo) {
@@ -42,8 +53,7 @@ func (s *Session) newTrace(req *http.Request) *httptrace.ClientTrace {
 	return tracer
 }
 
-// RoundTrip implements the goproxy.RoundTripper interface.
-func (s *Session) RoundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
+func (s *Session) roundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
 	newContext := httptrace.WithClientTrace(req.Context(), s.newTrace(req))
 	resp, err = s.tr.RoundTrip(req.WithContext(newContext))
 	if err != nil {
@@ -84,68 +94,14 @@ func newDefaultSessionTransport() *http.Transport {
 	}
 }
 
-type sessionPool struct {
-	sessions        []*Session
-	roundRobinStart uint64
-	sessionMu       sync.RWMutex
+type SessionManager struct {
+	lb                  loadbalancer.LoadBalancer
+	defaultRoundTripper http.RoundTripper
+	pxyCh               chan *proxy.Proxy
 }
 
-func (pool *sessionPool) new(pxy *proxy.Proxy, tr *http.Transport) *Session {
-	session := &Session{
-		pxy: pxy,
-		tr:  tr,
-	}
-	session.tr.Proxy = func(request *http.Request) (url *url.URL, e error) {
-		return url.Parse(pxy.URL())
-	}
-	return session
-}
-
-func (pool *sessionPool) put(s *Session) {
-	if s == nil {
-		return
-	}
-	pool.sessionMu.Lock()
-	defer pool.sessionMu.Unlock()
-	for _, exist := range pool.sessions {
-		if exist.pxy.Equal(s.pxy) {
-			return
-		}
-	}
-	pool.sessions = append(pool.sessions, s)
-}
-
-// remove remove Session from pool
-func (pool *sessionPool) remove(s *Session) {
-	pool.sessionMu.Lock()
-	defer pool.sessionMu.Unlock()
-	pool.removeSessionLocked(s)
-}
-
-// sp.sessionMu must be held
-func (pool *sessionPool) removeSessionLocked(s *Session) {
-	if s == nil {
-		panic("nil Session")
-	}
-	s.close()
-	for idx, v := range pool.sessions {
-		if v.pxy.Equal(s.pxy) {
-			copy(pool.sessions[idx:], pool.sessions[idx+1:])
-			pool.sessions = pool.sessions[:len(pool.sessions)-1]
-			return
-		}
-	}
-}
-
-type Manager struct {
-	pool  *sessionPool
-	lb    loadbalancer.LoadBalancer
-	pxyCh chan *proxy.Proxy
-}
-
-func NewManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy) *Manager {
-	sm := &Manager{
-		pool:  &sessionPool{},
+func NewSessionManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy) *SessionManager {
+	sm := &SessionManager{
 		lb:    loadbalancer.NewLoadBalancer(strategy),
 		pxyCh: make(chan *proxy.Proxy, 128),
 	}
@@ -156,23 +112,36 @@ func NewManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy) *Manag
 	return sm
 }
 
-func (m *Manager) init() {
+func (sm *SessionManager) init() {
 	go func() {
 		for {
 			select {
-			case pxy := <-m.pxyCh:
-				session := m.pool.new(pxy, newDefaultSessionTransport())
-				m.pool.put(session)
-				m.lb.AddEndpoint(session)
+			case pxy := <-sm.pxyCh:
+				session := NewSession(pxy, newDefaultSessionTransport())
+				sm.lb.AddEndpoint(session)
 			}
 		}
 	}()
 }
 
-func (m *Manager) PickOne() (*Session, error) {
-	endpoint := m.lb.Select()
+func (sm *SessionManager) pickOne() (*Session, error) {
+	endpoint := sm.lb.Select()
 	if endpoint == nil {
 		return nil, ErrSessionUnavailable
 	}
 	return endpoint.(*Session), nil
+}
+
+// RoundTrip implements the goproxy.RoundTripper interface.
+func (sm *SessionManager) RoundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
+	var session *Session
+	if session, err = sm.pickOne(); err != nil {
+		return http.DefaultTransport.RoundTrip(req)
+	}
+	logrus.Infof("RoundTrip through session:%s", session.String())
+	if resp, err = session.roundTrip(req, ctx); err != nil {
+		logrus.Warnf("Remove session:%s from load balancer", session.String())
+		sm.lb.DelEndpoint(session)
+	}
+	return
 }
