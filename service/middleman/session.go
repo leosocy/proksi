@@ -21,17 +21,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Session represents the connections between middleman and the real pxy server,
-// every real pxy server corresponds to a unique Session.
+// session represents the connections between middleman and the real pxy server,
+// every real pxy server corresponds to a unique session.
 //
-// Session can carry different requests with the same pxy, and will reuse connection.
-type Session struct {
+// session can carry different requests with the same pxy, and will reuse connection.
+type session struct {
 	pxy *proxy.Proxy
 	tr  *http.Transport
 }
 
-func NewSession(pxy *proxy.Proxy, tr *http.Transport) *Session {
-	session := &Session{
+func newSession(pxy *proxy.Proxy, tr *http.Transport) *session {
+	session := &session{
 		pxy: pxy,
 		tr:  tr,
 	}
@@ -41,7 +41,7 @@ func NewSession(pxy *proxy.Proxy, tr *http.Transport) *Session {
 	return session
 }
 
-func (s *Session) newTrace(req *http.Request) *httptrace.ClientTrace {
+func (s *session) newTrace(req *http.Request) *httptrace.ClientTrace {
 	tracer := &httptrace.ClientTrace{
 		GotConn: func(info httptrace.GotConnInfo) {
 			logrus.Infof("GotConn: %+v", info)
@@ -53,7 +53,7 @@ func (s *Session) newTrace(req *http.Request) *httptrace.ClientTrace {
 	return tracer
 }
 
-func (s *Session) roundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
+func (s *session) roundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
 	newContext := httptrace.WithClientTrace(req.Context(), s.newTrace(req))
 	resp, err = s.tr.RoundTrip(req.WithContext(newContext))
 	if err != nil {
@@ -63,20 +63,20 @@ func (s *Session) roundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *htt
 }
 
 // Weight implements the Endpoint.Weight interface.
-func (s *Session) Weight() int {
+func (s *session) Weight() int {
 	return int(s.pxy.Score)
 }
 
-func (s *Session) String() string {
+func (s *session) String() string {
 	return s.pxy.String()
 }
 
-func (s *Session) close() {
+func (s *session) close() {
 	s.tr.CloseIdleConnections()
 }
 
 var (
-	ErrSessionUnavailable = errors.New("Session unavailable")
+	errSessionUnavailable = errors.New("session unavailable")
 )
 
 func newDefaultSessionTransport() *http.Transport {
@@ -94,10 +94,16 @@ func newDefaultSessionTransport() *http.Transport {
 	}
 }
 
+type roundTripRes struct {
+	s    *session
+	resp *http.Response
+	err  error
+}
+
 type SessionManager struct {
 	lb                  loadbalancer.LoadBalancer
-	defaultRoundTripper http.RoundTripper
 	pxyCh               chan *proxy.Proxy
+	defaultRoundTripper http.RoundTripper
 }
 
 func NewSessionManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy) *SessionManager {
@@ -117,31 +123,45 @@ func (sm *SessionManager) init() {
 		for {
 			select {
 			case pxy := <-sm.pxyCh:
-				session := NewSession(pxy, newDefaultSessionTransport())
+				session := newSession(pxy, newDefaultSessionTransport())
 				sm.lb.AddEndpoint(session)
 			}
 		}
 	}()
 }
 
-func (sm *SessionManager) pickOne() (*Session, error) {
+func (sm *SessionManager) pickOne() (*session, error) {
 	endpoint := sm.lb.Select()
 	if endpoint == nil {
-		return nil, ErrSessionUnavailable
+		return nil, errSessionUnavailable
 	}
-	return endpoint.(*Session), nil
+	return endpoint.(*session), nil
 }
 
 // RoundTrip implements the goproxy.RoundTripper interface.
 func (sm *SessionManager) RoundTrip(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
-	var session *Session
-	if session, err = sm.pickOne(); err != nil {
-		return http.DefaultTransport.RoundTrip(req)
+	rtResCh := make(chan roundTripRes)
+	go func() {
+		var (
+			session *session
+			resp    *http.Response
+			err     error
+		)
+		if session, err = sm.pickOne(); err != nil {
+			resp, err = http.DefaultTransport.RoundTrip(req)
+		} else {
+			logrus.Infof("RoundTrip through session:%s", session.String())
+			resp, err = session.roundTrip(req, ctx)
+		}
+		rtResCh <- roundTripRes{session, resp, err}
+	}()
+
+	select {
+	case v := <-rtResCh:
+		if v.err != nil {
+			logrus.Warnf("Remove session:%s from load balancer", v.s.String())
+			sm.lb.DelEndpoint(v.s)
+		}
+		return v.resp, v.err
 	}
-	logrus.Infof("RoundTrip through session:%s", session.String())
-	if resp, err = session.roundTrip(req, ctx); err != nil {
-		logrus.Warnf("Remove session:%s from load balancer", session.String())
-		sm.lb.DelEndpoint(session)
-	}
-	return
 }
