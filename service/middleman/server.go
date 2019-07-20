@@ -5,9 +5,10 @@
 package middleman
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
-	"github.com/Leosocy/IntelliProxy/service/middleman/session"
 	"net/http"
+
+	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
+	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
 
 	"github.com/elazarl/goproxy"
 )
@@ -20,21 +21,19 @@ import (
 // And, this is safe because the middleman server is usually deployed
 // as a sidecar with crawler program together.
 type Server struct {
-	sm *session.Manager
+	sm *SessionManager
 	*goproxy.ProxyHttpServer
 }
 
 func NewServer(nb backend.NotifyBackend) *Server {
 	s := &Server{
-		sm:              session.NewManager(nb, session.Random),
+		sm:              NewSessionManager(nb, loadbalancer.WeightedRoundRobin),
 		ProxyHttpServer: goproxy.NewProxyHttpServer(),
 	}
 	s.Verbose = true
 	s.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 	s.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (request *http.Request, response *http.Response) {
-		if rt, err := s.sm.PickOne(); err == nil {
-			ctx.RoundTripper = rt
-		}
+		ctx.RoundTripper = s.sm
 		return req, nil
 	})
 	return s

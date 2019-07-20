@@ -43,17 +43,11 @@ func (n *BaseNotifier) Detach(w Watcher) {
 	}
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	switch len(n.watchers) {
-	case 0:
-	case 1:
-		n.watchers = []Watcher{}
-	default:
-		for i, v := range n.watchers {
-			if v != w {
-				continue
-			}
-			copy(n.watchers[i:], n.watchers[i+1:])
+	for idx, v := range n.watchers {
+		if v == w {
+			copy(n.watchers[idx:], n.watchers[idx+1:])
 			n.watchers = n.watchers[:len(n.watchers)-1]
+			return
 		}
 	}
 }

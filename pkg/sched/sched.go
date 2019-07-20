@@ -5,8 +5,9 @@
 package sched
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 	"time"
+
+	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
 
 	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
 
