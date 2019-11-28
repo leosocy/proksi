@@ -18,7 +18,7 @@ require (
 	github.com/moul/http2curl v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/parnurzeal/gorequest v0.2.15
+	github.com/parnurzeal/gorequest v0.2.16
 	github.com/pkg/errors v0.8.1
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
