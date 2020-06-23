@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
 
 The client can simply use `IntelliProxy` as a proxy server to achieve random ip access to the target host. `IntelliProxy` acts as a middleman to forward client requests to real proxy servers according to certain strategies.
-![middleman](https://blog-images-1257621236.cos.ap-shanghai.myqcloud.com/IntelliProxy-MiddlemanServer-High-Compress.gif)
+![middleman](https://blog-images-1257621236.file.myqcloud.com/IntelliProxy-MiddlemanServer-High-Compress.gif)
 
 Or the client can use `IntelliProxy` as a data source to request the required proxy through the RESTful API.
 
