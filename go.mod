@@ -1,7 +1,6 @@
 module github.com/Leosocy/IntelliProxy
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/EDDYCJY/fake-useragent v0.2.0
 	github.com/HuKeping/rbtree v0.0.0-20180131135737-0a7018020338
 	github.com/PuerkitoBio/goquery v1.5.0 // indirect
@@ -22,16 +21,14 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca // indirect
 	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/viper v1.2.0
+	github.com/spf13/viper v1.7.1
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/temoto/robotstxt v0.0.0-20180810133444-97ee4a9ee6ea // indirect
-	golang.org/x/text v0.3.0
-	golang.org/x/tools v0.0.0-20190328211700-ab21143f2384
-	google.golang.org/appengine v0.0.0-00010101000000-000000000000 // indirect
+	golang.org/x/text v0.3.2
+	golang.org/x/tools v0.0.0-20191112195655-aa38f8e97acc
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 )
