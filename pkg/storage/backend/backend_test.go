@@ -8,8 +8,8 @@ import (
 	"net"
 	"testing"
 
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/storage"
 	"github.com/stretchr/testify/suite"
 )
 

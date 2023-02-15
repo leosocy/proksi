@@ -8,9 +8,9 @@ import (
 	"errors"
 	"net"
 
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/leosocy/proksi/pkg/storage"
 
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 // Errors occur when using backend.

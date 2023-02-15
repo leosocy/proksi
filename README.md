@@ -1,14 +1,14 @@
-# IntelliProxy: Provide durable, real-time, high-quality proxies as a middleman or datasource server
+# proksi: Provide durable, real-time, high-quality proxies as a middleman or datasource server
 
-[![Build Status](https://travis-ci.org/Leosocy/IntelliProxy.svg?branch=master)](https://travis-ci.org/Leosocy/IntelliProxy)
-[![codecov](https://codecov.io/gh/Leosocy/IntelliProxy/branch/master/graph/badge.svg)](https://codecov.io/gh/Leosocy/IntelliProxy)
+[![Build Status](https://travis-ci.org/leosocy/proksi.svg?branch=master)](https://travis-ci.org/leosocy/proksi)
+[![codecov](https://codecov.io/gh/leosocy/proksi/branch/master/graph/badge.svg)](https://codecov.io/gh/leosocy/proksi)
 
-The client can simply use `IntelliProxy` as a proxy server to achieve random ip access to the target host. `IntelliProxy` acts as a middleman to forward client requests to real proxy servers according to certain strategies.
-![middleman](https://blog-images-1257621236.file.myqcloud.com/IntelliProxy-MiddlemanServer-High-Compress.gif)
+The client can simply use `proksi` as a proxy server to achieve random ip access to the target host. `proksi` acts as a middleman to forward client requests to real proxy servers according to certain strategies.
+![middleman](https://blog-images-1257621236.file.myqcloud.com/proksi-MiddlemanServer-High-Compress.gif)
 
-Or the client can use `IntelliProxy` as a data source to request the required proxy through the RESTful API.
+Or the client can use `proksi` as a data source to request the required proxy through the RESTful API.
 
-## 组织架构
+## 架构
 
 - Proxy: http(s)代理对象，包括ip, port, geo info, anonymity, latency, speed等属性。
 - Spider: 免费代理资源爬取器。
@@ -16,7 +16,7 @@ Or the client can use `IntelliProxy` as a data source to request the required pr
 - Storage: 存储Proxy的介质，例如InMemory、MySQL、Mongo、Redis等等。
 - Scheduler: 负责调度Spider, Checker, Storage之间的合作。
 - Service  
-  - middleman: client可以直接将代理服务器指向middleman监听的端口，IntelliProxy会选出最佳的代理服务器转发出去。
+  - middleman: client可以直接将代理服务器指向middleman监听的端口，proksi会选出最佳的代理服务器转发出去。
   - datasource: 提供RESTful API，支持查询符合条件的proxy。
 
 ## 主要用到的开源包

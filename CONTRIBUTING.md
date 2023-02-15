@@ -8,7 +8,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/Leosocy/IntelliProxy/issues.
+Report bugs at https://github.com/leosocy/proksi/issues.
 
 If you are reporting a bug, please include:
 
@@ -28,13 +28,13 @@ is open to whoever wants to implement it.
 
 ### Write Documentation
 
-IntelliProxy could always use more documentation, whether as part of the
-official IntelliProxy docs, in docstrings, or even on the web in blog posts,
+proksi could always use more documentation, whether as part of the
+official proksi docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/Leosocy/IntelliProxy/issues.
+The best way to send feedback is to file an issue at https://github.com/leosocy/proksi/issues.
 
 If you are proposing a feature:
 
@@ -45,12 +45,12 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `IntelliProxy` for local development.
+Ready to contribute? Here's how to set up `proksi` for local development.
 
-1. Fork the `IntelliProxy` repo on GitHub.
+1. Fork the `proksi` repo on GitHub.
 2. Clone your fork locally::
 ```bash
-    $ git clone git@github.com:your_name_here/IntelliProxy.git
+    $ git clone git@github.com:your_name_here/proksi.git
 ```
 3. Create a branch for local development::
 ```bash

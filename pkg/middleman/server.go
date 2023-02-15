@@ -7,8 +7,8 @@ package middleman
 import (
 	"net/http"
 
-	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
-	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
+	"github.com/leosocy/proksi/pkg/loadbalancer"
+	"github.com/leosocy/proksi/pkg/storage/backend"
 
 	"github.com/elazarl/goproxy"
 )

@@ -7,15 +7,15 @@ package sched
 import (
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
+	"github.com/leosocy/proksi/pkg/pubsub"
 
-	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
+	"github.com/leosocy/proksi/pkg/storage/backend"
 
-	"github.com/Leosocy/IntelliProxy/pkg/checker"
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-	"github.com/Leosocy/IntelliProxy/pkg/spider"
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
 	"github.com/Sirupsen/logrus"
+	"github.com/leosocy/proksi/pkg/checker"
+	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/spider"
+	"github.com/leosocy/proksi/pkg/utils"
 )
 
 // Scheduler responsible for scheduling cooperation between Spider,Checker and Backend.

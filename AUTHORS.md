@@ -2,7 +2,7 @@
 
 ## Development Lead
 
-- Leosocy [Leosocy](https://github.com/Leosocy)
+- leosocy [leosocy](https://github.com/leosocy)
 
 ## Contributors
 

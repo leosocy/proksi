@@ -5,9 +5,9 @@
 package backend
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
-	"github.com/Leosocy/IntelliProxy/pkg/pubsub"
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/pubsub"
+	"github.com/leosocy/proksi/pkg/storage"
 )
 
 // NotifyBackend is an interface that notify when data changes in backend.

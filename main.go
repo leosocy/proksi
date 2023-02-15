@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/leosocy/proksi/pkg/middleman"
 	"net/http"
 
-	"github.com/Leosocy/IntelliProxy/pkg/sched"
-	"github.com/Leosocy/IntelliProxy/service/middleman"
+	"github.com/leosocy/proksi/pkg/sched"
 )
 
 func main() {

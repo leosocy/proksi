@@ -11,13 +11,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/loadbalancer"
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
-	"github.com/Leosocy/IntelliProxy/pkg/storage/backend"
+	"github.com/leosocy/proksi/pkg/loadbalancer"
+	"github.com/leosocy/proksi/pkg/storage"
+	"github.com/leosocy/proksi/pkg/storage/backend"
 
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 	"github.com/Sirupsen/logrus"
 	"github.com/elazarl/goproxy"
+	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/pkg/errors"
 )
 

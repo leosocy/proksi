@@ -9,10 +9,10 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Leosocy/IntelliProxy/pkg/storage"
+	"github.com/leosocy/proksi/pkg/storage"
 
 	"github.com/HuKeping/rbtree"
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 type comparableProxy struct {

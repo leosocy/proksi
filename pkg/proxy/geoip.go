@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
+	"github.com/leosocy/proksi/pkg/utils"
 
 	"github.com/parnurzeal/gorequest"
 )

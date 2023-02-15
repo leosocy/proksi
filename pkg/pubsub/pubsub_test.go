@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/Leosocy/IntelliProxy/mocks"
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/leosocy/proksi/mocks"
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 func TestBaseNotifier(t *testing.T) {

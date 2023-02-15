@@ -1,4 +1,4 @@
-module github.com/Leosocy/IntelliProxy
+module github.com/leosocy/proksi
 
 go 1.19
 

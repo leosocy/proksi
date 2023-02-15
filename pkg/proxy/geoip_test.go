@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
+	"github.com/leosocy/proksi/pkg/utils"
 )
 
 func fakeTooManyRequestsResp(w http.ResponseWriter, r *http.Request) {

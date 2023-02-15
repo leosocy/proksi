@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
+	"github.com/leosocy/proksi/pkg/utils"
 )
 
 // Anonymity 匿名度, 请求`https://httpbin.org/get?show_env=1`

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	browser "github.com/EDDYCJY/fake-useragent"
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
 	"github.com/Sirupsen/logrus"
 	"github.com/gocolly/colly"
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 type spiderCoreParser interface {

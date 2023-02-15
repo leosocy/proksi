@@ -10,8 +10,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Leosocy/IntelliProxy/mocks"
-	"github.com/Leosocy/IntelliProxy/pkg/utils"
+	"github.com/leosocy/proksi/mocks"
+	"github.com/leosocy/proksi/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

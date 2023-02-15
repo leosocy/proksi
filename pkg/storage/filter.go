@@ -5,7 +5,7 @@
 package storage
 
 import (
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 // Filter is used to filter a proxy during the selection process

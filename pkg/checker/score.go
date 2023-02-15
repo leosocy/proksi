@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Leosocy/IntelliProxy/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/parnurzeal/gorequest"
 )
 
