@@ -8,8 +8,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 func TestFilterScore(t *testing.T) {

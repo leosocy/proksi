@@ -15,7 +15,7 @@ Or the client can use `proksi` as a data source to request the required proxy th
 - Checker: 检验代理质量，包括时延、网速等等，同时给代理打分。
 - Storage: 存储Proxy的介质，例如InMemory、MySQL、Mongo、Redis等等。
 - Scheduler: 负责调度Spider, Checker, Storage之间的合作。
-- Service  
+- Service
   - middleman: client可以直接将代理服务器指向middleman监听的端口，proksi会选出最佳的代理服务器转发出去。
   - datasource: 提供RESTful API，支持查询符合条件的proxy。
 

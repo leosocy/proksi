@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/leosocy/proksi/pkg/middleman"
 	"net/http"
+
+	"github.com/leosocy/proksi/pkg/middleman"
 
 	"github.com/leosocy/proksi/pkg/sched"
 )

@@ -10,10 +10,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/leosocy/proksi/mocks"
-	"github.com/leosocy/proksi/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/leosocy/proksi/mocks"
+	"github.com/leosocy/proksi/pkg/utils"
 )
 
 func TestNewProxy(t *testing.T) {

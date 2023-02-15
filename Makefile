@@ -45,7 +45,7 @@ package:
 	@echo "building image ${BIN_NAME} ${VERSION} $(GIT_COMMIT)"
 	docker build --build-arg VERSION=${VERSION} --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(IMAGE_NAME):local .
 
-tag: 
+tag:
 	@echo "Tagging: latest ${VERSION} $(GIT_COMMIT)"
 	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):$(GIT_COMMIT)
 	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):${VERSION}
@@ -62,4 +62,3 @@ clean:
 
 test:
 	go test ./... -count=1 -v
-

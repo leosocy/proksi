@@ -17,8 +17,9 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/elazarl/goproxy"
-	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/pkg/errors"
+
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 // session represents the connections between middleman and the real pxy server,

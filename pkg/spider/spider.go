@@ -11,6 +11,7 @@ import (
 	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/Sirupsen/logrus"
 	"github.com/gocolly/colly"
+
 	"github.com/leosocy/proksi/pkg/proxy"
 )
 

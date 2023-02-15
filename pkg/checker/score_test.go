@@ -12,8 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 func TestNewBatchHTTPSScorer(t *testing.T) {

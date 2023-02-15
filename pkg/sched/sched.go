@@ -12,6 +12,7 @@ import (
 	"github.com/leosocy/proksi/pkg/storage/backend"
 
 	"github.com/Sirupsen/logrus"
+
 	"github.com/leosocy/proksi/pkg/checker"
 	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/leosocy/proksi/pkg/spider"

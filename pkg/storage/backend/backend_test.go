@@ -8,9 +8,10 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/suite"
+
 	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/leosocy/proksi/pkg/storage"
-	"github.com/stretchr/testify/suite"
 )
 
 type BackendTestSuite struct {

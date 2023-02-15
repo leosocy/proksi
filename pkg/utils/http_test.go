@@ -18,7 +18,7 @@ const (
 		"headers": {
 		  "Host": "httpbin.org",
 		  "Via": "1.1 squid",
-		  "X-Forwarded-For": "1.2.3.4, 5.6.7.8", 
+		  "X-Forwarded-For": "1.2.3.4, 5.6.7.8",
 		  "X-Real-Ip": "9.10.11.12"
 		}
 	  }`

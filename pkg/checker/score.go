@@ -11,8 +11,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/parnurzeal/gorequest"
+
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 // Scorer is the interface used to score a proxy.
