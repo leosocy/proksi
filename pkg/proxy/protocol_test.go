@@ -5,24 +5,25 @@
 package proxy
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewProtocol(t *testing.T) {
 	assert := assert.New(t)
-	assert.Equal(HTTP, NewProtocol("HTtp"))
-	assert.Equal(HTTP, NewProtocol(" HTtp"))
-	assert.Equal(HTTP, NewProtocol("HTTP "))
-	assert.Equal(HTTPS, NewProtocol("HTTPS"))
-	assert.Equal(SOCKS4, NewProtocol("SOCKs4 "))
-	assert.Equal(SOCKS5, NewProtocol("SOCKS 5"))
-	assert.Equal(UnknownProtocol, NewProtocol("SOCKS 6"))
+	assert.Equal(HTTP, ParseProtocol("HTtp"))
+	assert.Equal(HTTP, ParseProtocol(" HTtp"))
+	assert.Equal(HTTP, ParseProtocol("HTTP "))
+	assert.Equal(HTTPS, ParseProtocol("HTTPS"))
+	assert.Equal(SOCKS4, ParseProtocol("SOCKs4 "))
+	assert.Equal(SOCKS5, ParseProtocol("SOCKS 5"))
+	assert.Equal(ProtocolUnsupported, ParseProtocol("SOCKS 6"))
 }
 
-func BenchmarkNewProtocol(b *testing.B) {
+func BenchmarkParseProtocol(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		NewProtocol(" SOCKS 4")
+		ParseProtocol(" SOCKS 4")
 	}
 }
 

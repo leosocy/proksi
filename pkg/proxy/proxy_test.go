@@ -62,7 +62,7 @@ func TestProxy_DetectAnonymity_Unknown(t *testing.T) {
 	err := pxy.DetectAnonymity(g)
 	g.AssertNumberOfCalls(t, "GetRequestHeadersUsingProxy", 0)
 	assert.NotNil(err)
-	assert.Equal(Unknown, pxy.Anon)
+	assert.Equal(AnonymityUnknown, pxy.Anonymity)
 }
 
 func TestProxy_DetectAnonymity_Transparent(t *testing.T) {
@@ -78,7 +78,7 @@ func TestProxy_DetectAnonymity_Transparent(t *testing.T) {
 	err := pxy.DetectAnonymity(g)
 	g.AssertExpectations(t)
 	assert.Nil(err)
-	assert.Equal(Transparent, pxy.Anon)
+	assert.Equal(Transparent, pxy.Anonymity)
 }
 
 func TestProxy_DetectAnonymity_Anonymous(t *testing.T) {
@@ -94,7 +94,7 @@ func TestProxy_DetectAnonymity_Anonymous(t *testing.T) {
 	err := pxy.DetectAnonymity(g)
 	g.AssertExpectations(t)
 	assert.Nil(err)
-	assert.Equal(Anonymous, pxy.Anon)
+	assert.Equal(Anonymous, pxy.Anonymity)
 }
 
 func TestProxy_DetectAnonymity_Elite(t *testing.T) {
@@ -110,7 +110,7 @@ func TestProxy_DetectAnonymity_Elite(t *testing.T) {
 	err := pxy.DetectAnonymity(g)
 	g.AssertExpectations(t)
 	assert.Nil(err)
-	assert.Equal(Elite, pxy.Anon)
+	assert.Equal(Elite, pxy.Anonymity)
 }
 
 func TestProxy_Equal(t *testing.T) {

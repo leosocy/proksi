@@ -33,8 +33,10 @@ const (
 
 	// SOCKS5 proxy can handle HTTP(s), TCP and UDP traffic. Supports authentication and ipv6.
 	// See https://www.rfc-editor.org/rfc/rfc1928 for more details.
-	SOCKS5          Protocol = 1 << 3
-	UnknownProtocol Protocol = 1 << 7
+	SOCKS5 Protocol = 1 << 3
+
+	// ProtocolUnsupported represents the protocol is not supported.
+	ProtocolUnsupported Protocol = 1 << 7
 )
 
 // String returns a string representation of Protocol
@@ -53,8 +55,8 @@ func (proto Protocol) String() string {
 	}
 }
 
-// NewProtocol parse protocol from string
-func NewProtocol(s string) Protocol {
+// ParseProtocol parse protocol from string
+func ParseProtocol(s string) Protocol {
 	s = strings.ToLower(strings.ReplaceAll(s, ` `, ``))
 	switch s {
 	case "http":
@@ -66,7 +68,7 @@ func NewProtocol(s string) Protocol {
 	case "socks5":
 		return SOCKS5
 	default:
-		return UnknownProtocol
+		return ProtocolUnsupported
 	}
 }
 

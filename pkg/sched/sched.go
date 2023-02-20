@@ -5,7 +5,10 @@
 package sched
 
 import (
+	"github.com/leosocy/proksi/pkg/geolocation"
 	"time"
+
+	"github.com/leosocy/proksi/pkg/quality"
 
 	"github.com/leosocy/proksi/pkg/pubsub"
 
@@ -13,7 +16,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 
-	"github.com/leosocy/proksi/pkg/checker"
 	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/leosocy/proksi/pkg/spider"
 	"github.com/leosocy/proksi/pkg/utils"
@@ -23,9 +25,9 @@ import (
 type Scheduler struct {
 	spiders          []*spider.Spider
 	cachedChan       proxy.CachedChan
-	scoreChecker     checker.Scorer
+	scoreChecker     quality.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
-	geoInfoFetcher   proxy.GeoInfoFetcher
+	geolocator       proxy.Geolocator
 	backend          backend.NotifyBackend
 	logger           *logrus.Logger
 }
@@ -35,9 +37,9 @@ func NewScheduler() *Scheduler {
 	sc := &Scheduler{
 		spiders:          spider.BuildAndInitAll(),
 		cachedChan:       proxy.NewBloomCachedChan(),
-		scoreChecker:     checker.NewBatchHTTPSScorer(checker.HostsOfBatchHTTPSScorer),
+		scoreChecker:     quality.NewBatchHTTPSScorer(quality.HostsOfBatchHTTPSScorer),
 		reqHeadersGetter: utils.HTTPBinUtil{Timeout: 5 * time.Second},
-		geoInfoFetcher:   proxy.NewGeoInfoFetcher(proxy.NameOfIPAPIFetcher),
+		geolocator:       geolocation.NewIpapiGeolocator(),
 		backend:          backend.WithNotifier(backend.NewInMemoryBackend(), &pubsub.BaseNotifier{}),
 		logger:           logrus.New(),
 	}
@@ -94,7 +96,7 @@ func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
 	entry := sc.logger.WithFields(logrus.Fields{
 		"url": pxy.URL(),
 	})
-	if pxy.Anon == proxy.Unknown {
+	if pxy.Anonymity == proxy.AnonymityUnknown {
 		if err := pxy.DetectAnonymity(sc.reqHeadersGetter); err != nil {
 			entry.Warnf("Failed to detect anonymity, %v", err)
 		} else {
@@ -103,8 +105,8 @@ func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
 			}
 		}
 	}
-	if pxy.GeoInfo == nil {
-		if err := pxy.DetectGeoInfo(sc.geoInfoFetcher); err != nil {
+	if pxy.Geolocation == nil {
+		if err := pxy.DetectGeoInfo(sc.geolocator); err != nil {
 			entry.Warnf("Failed to detect geography information, %v", err)
 		} else {
 			if err := sc.backend.Update(pxy); err == nil {

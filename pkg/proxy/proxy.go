@@ -1,13 +1,15 @@
-// Copyright (c) 2019 leosocy, leosocy@gmail.com
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file.
+// Copyright 2023 The proksi Authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
 
 package proxy
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,37 +18,25 @@ import (
 	"github.com/leosocy/proksi/pkg/utils"
 )
 
-// Anonymity 匿名度, 请求`https://httpbin.org/get?show_env=1`
-// 根据ResponseBody中的 `X-Real-Ip` 和 `Via`字段判断。
-// 另外如果代理支持HTTPS，访问https网站是没有匿名度的概念的，
-// 因为此时代理只负责传输数据，并不能解析替换RequestHeaders。
-type Anonymity uint8
+// MaximumScore 代理最大得分
+const MaximumScore int8 = 100
 
-const (
-	// Unknown 探测不到匿名度
-	Unknown Anonymity = 0
-	// Transparent 透明：服务器知道你使用了代理，并且能查到原始IP
-	Transparent Anonymity = 1
-	// Anonymous 普通匿名(较为少见)：服务器知道你使用了代理，但是查不到原始IP
-	Anonymous Anonymity = 2
-	// Elite 高级匿名：服务器不知道你使用了代理
-	Elite Anonymity = 3 // 高匿名
-	// MaximumScore 代理最大得分
-	MaximumScore int8 = 100
-)
-
-// Proxy IP Proxy data model.
+// Proxy describes a domain object.
 type Proxy struct {
-	IP        net.IP    `json:"ip"`
-	Port      uint32    `json:"port"`
-	GeoInfo   *GeoInfo  `json:"geo_info"`
-	Anon      Anonymity `json:"anonymity"`
-	Latency   uint32    `json:"latency"` // unit: ms
-	Speed     uint32    `json:"speed"`   // unit: kb/s
-	Score     int8      `json:"score"`   // [0-100]
-	CreatedAt time.Time `json:"created_at"`
-	CheckedAt time.Time `json:"checked_at"`
-	lock      sync.RWMutex
+	AddrPort    netip.AddrPort
+	Protocols   Protocols
+	Anonymity   Anonymity
+	Quality     Quality
+	Geolocation *Geolocation
+	CreatedAt   time.Time
+	CheckedAt   time.Time
+
+	// DEPRECATED below
+	IP    net.IP
+	Port  uint32
+	Score int8
+
+	lock sync.RWMutex
 }
 
 // NewProxy passes in the ip, port, calculates the other field values,
@@ -72,9 +62,9 @@ func NewProxy(ip, port string) (*Proxy, error) {
 	}, nil
 }
 
-// DetectGeoInfo set the GeoInfo field value by calling `NewGeoInfo`
-func (p *Proxy) DetectGeoInfo(f GeoInfoFetcher) (err error) {
-	p.GeoInfo, err = f.Do(p.IP.String())
+// DetectGeoInfo set the Geolocation field value by calling `NewGeoInfo`
+func (p *Proxy) DetectGeoInfo(locator Geolocator) (err error) {
+	p.Geolocation, err = locator.Locate(context.Background(), p.IP.String())
 	return
 }
 
@@ -103,12 +93,12 @@ func (p *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
 		return
 	}
 	if publicIP.Equal(publicIPUsingProxy) {
-		p.Anon = Transparent
+		p.Anonymity = Transparent
 	} else {
 		if headersUsingProxy.Via != "" {
-			p.Anon = Anonymous
+			p.Anonymity = Anonymous
 		} else {
-			p.Anon = Elite
+			p.Anonymity = Elite
 		}
 	}
 	return
@@ -158,4 +148,54 @@ func (p *Proxy) String() string {
 
 func (p *Proxy) Equal(to *Proxy) bool {
 	return p.IP.Equal(to.IP)
+}
+
+// Proxy builder pattern code
+type ProxyBuilder struct {
+	proxy *Proxy
+}
+
+func NewProxyBuilder() *ProxyBuilder {
+	proxy := &Proxy{}
+	b := &ProxyBuilder{proxy: proxy}
+	return b
+}
+
+func (b *ProxyBuilder) AddrPort(addrPort netip.AddrPort) *ProxyBuilder {
+	b.proxy.AddrPort = addrPort
+	return b
+}
+
+func (b *ProxyBuilder) Protocols(protocols Protocols) *ProxyBuilder {
+	b.proxy.Protocols = protocols
+	return b
+}
+
+func (b *ProxyBuilder) Anonymity(anonymity Anonymity) *ProxyBuilder {
+	b.proxy.Anonymity = anonymity
+	return b
+}
+
+func (b *ProxyBuilder) Quality(quality Quality) *ProxyBuilder {
+	b.proxy.Quality = quality
+	return b
+}
+
+func (b *ProxyBuilder) Geolocation(geolocation *Geolocation) *ProxyBuilder {
+	b.proxy.Geolocation = geolocation
+	return b
+}
+
+func (b *ProxyBuilder) Port(port uint32) *ProxyBuilder {
+	b.proxy.Port = port
+	return b
+}
+
+func (b *ProxyBuilder) Score(score int8) *ProxyBuilder {
+	b.proxy.Score = score
+	return b
+}
+
+func (b *ProxyBuilder) Build() (*Proxy, error) {
+	return b.proxy, nil
 }
