@@ -58,17 +58,17 @@ func (suite *BackendTestSuite) TestSelect() {
 		suite.Equal(2, len(pxys))
 		suite.Nil(err)
 		// filter score
-		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(60)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterUptime(60)))
 		suite.Equal(1, len(pxys))
 		suite.True(pxys[0].Score >= 60)
 		// filter score none available
-		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(100)))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterUptime(100)))
 		suite.NotNil(err)
 		// filter and offset, limit
-		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithLimit(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterUptime(50)), storage.WithLimit(10))
 		suite.Equal(2, len(pxys))
 		// filter and offset out of range
-		pxys, err = s.Select(storage.WithFilter(storage.FilterScore(50)), storage.WithOffset(10))
+		pxys, err = s.Select(storage.WithFilter(storage.FilterUptime(50)), storage.WithOffset(10))
 		suite.NotNil(err)
 	}
 }

@@ -38,7 +38,7 @@ func TestFilterScore(t *testing.T) {
 		},
 	}
 	for _, data := range testData {
-		filter := FilterScore(data.threshold)
+		filter := FilterUptime(proxy.Uptime(data.threshold))
 		proxies := filter(data.proxies)
 		assert.Equal(data.count, len(proxies))
 	}

@@ -7,12 +7,14 @@ package geolocation
 import (
 	"context"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/leosocy/proksi/pkg/proxy"
-	"go.uber.org/ratelimit"
 	"io"
 	"net/http"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
+	"go.uber.org/ratelimit"
+
+	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 type ipapiResponse struct {

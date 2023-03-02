@@ -114,7 +114,7 @@ func NewSessionManager(nb backend.NotifyBackend, strategy loadbalancer.Strategy)
 	}
 	nb.Attach(backend.NewInsertionWatcher(func(pxy *proxy.Proxy) {
 		sm.pxyCh <- pxy
-	}, storage.FilterScore(90)))
+	}, storage.FilterUptime(90)))
 	sm.init()
 	return sm
 }

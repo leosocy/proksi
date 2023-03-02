@@ -13,7 +13,7 @@ run:
   issues-exit-code: 1
 
   # include test files or not, default is true
-  tests: true
+  tests: false
 
   # which dirs to skip: issues from them won't be reported;
   # can use regexp here: generated.*, regexp is applied on full path;
@@ -517,41 +517,39 @@ linters:
   enable-all: false
   enable:
     - gofmt
-#    - govet
-    #    - bodyclose
-    #    - depguard
-    #    - dogsled
-    #    - errcheck
-    #    - goconst
-    #    - gocritic
-    #    - gocyclo
+    - govet
+    - bodyclose
+    - depguard
+    - dogsled
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
     - goimports
-    #    - gosec
-    #    - gosimple
-    #    - ineffassign
-    #    - interfacer
-    #    - misspell
-    #    - scopelint
+    - gosec
+    - gosimple
+#    - ineffassign
+    - interfacer
+    - misspell
+    - scopelint
     - typecheck
-    #    - unconvert
-    #    - unparam
-    #    - varcheck
-    #    - godox
-    #    - structcheck
-    #    - dupl
-    #
-#    - staticcheck
-    #    - stylecheck
-    - deadcode
-#    - unused
-    #    - funlen
-    #    - whitespace
-#    - golint
-    #    - lll
-    #    - wsl
-    #    - nakedret
-    #    - gochecknoglobals
-    #    - maligned
+    - unconvert
+    - unparam
+    - varcheck
+    - godox
+    - structcheck
+    - dupl
+    - staticcheck
+    - stylecheck
+    - unused
+    - funlen
+    - whitespace
+    - golint
+    - lll
+#    - wsl
+    - nakedret
+#    - gochecknoglobals
+    - maligned
   disable-all: true
   presets: [ ]
   fast: false

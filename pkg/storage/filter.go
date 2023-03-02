@@ -11,13 +11,13 @@ import (
 // Filter is used to filter a proxy during the selection process
 type Filter func([]*proxy.Proxy) []*proxy.Proxy
 
-// FilterScore is a score based Select Filter which will
-// only return proxies which score >= threshold
-func FilterScore(threshold int8) Filter {
+// FilterUptime is a proxy.Uptime based Select Filter which will
+// only return proxies which uptime >= threshold
+func FilterUptime(threshold proxy.Uptime) Filter {
 	return func(old []*proxy.Proxy) []*proxy.Proxy {
 		var proxies []*proxy.Proxy
 		for _, pxy := range old {
-			if pxy.Score >= threshold {
+			if pxy.Quality.Uptime >= threshold {
 				proxies = append(proxies, pxy)
 			}
 		}

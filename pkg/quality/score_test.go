@@ -4,7 +4,7 @@
 
 // that can be found in the LICENSE file.
 
-package checker
+package quality
 
 import (
 	"net/http"

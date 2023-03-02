@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package checker
+package quality
 
 var (
 	// HostsOfBatchHTTPSScorer contains 10 host with https scheme which are often crawled.

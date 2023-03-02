@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/leosocy/proksi/pkg/protocol"
+	"github.com/leosocy/proksi/pkg/traffic"
 	"net"
 	"net/netip"
 	"strconv"
@@ -24,7 +26,8 @@ const MaximumScore int8 = 100
 // Proxy describes a domain object.
 type Proxy struct {
 	AddrPort    netip.AddrPort
-	Protocols   Protocols
+	Protocols   protocol.Protocols
+	Traffic     traffic.Traffics
 	Anonymity   Anonymity
 	Quality     Quality
 	Geolocation *Geolocation
@@ -166,7 +169,7 @@ func (b *ProxyBuilder) AddrPort(addrPort netip.AddrPort) *ProxyBuilder {
 	return b
 }
 
-func (b *ProxyBuilder) Protocols(protocols Protocols) *ProxyBuilder {
+func (b *ProxyBuilder) Protocols(protocols protocol.Protocols) *ProxyBuilder {
 	b.proxy.Protocols = protocols
 	return b
 }

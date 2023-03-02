@@ -20,7 +20,7 @@ func TestInsertionWatcher(t *testing.T) {
 	recvCount := 0
 	watcher := NewInsertionWatcher(func(pxy *proxy.Proxy) {
 		recvCount++
-	}, storage.FilterScore(80))
+	}, storage.FilterUptime(80))
 	nb.Attach(watcher)
 
 	pxy, _ := proxy.NewProxy("1.2.3.4", "80")

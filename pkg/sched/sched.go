@@ -5,8 +5,9 @@
 package sched
 
 import (
-	"github.com/leosocy/proksi/pkg/geolocation"
 	"time"
+
+	"github.com/leosocy/proksi/pkg/geolocation"
 
 	"github.com/leosocy/proksi/pkg/quality"
 
