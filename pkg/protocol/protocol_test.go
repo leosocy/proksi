@@ -18,7 +18,7 @@ func TestNewProtocol(t *testing.T) {
 	assert.Equal(HTTPS, ParseProtocol("HTTPS"))
 	assert.Equal(SOCKS4, ParseProtocol("SOCKs4 "))
 	assert.Equal(SOCKS5, ParseProtocol("SOCKS 5"))
-	assert.Equal(Unknown, ParseProtocol("SOCKS 6"))
+	assert.Equal(Nothing, ParseProtocol("SOCKS 6"))
 }
 
 func BenchmarkParseProtocol(b *testing.B) {

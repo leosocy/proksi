@@ -43,13 +43,13 @@ func probeHTTPTraffic(conn net.Conn) error {
 func (p *httpProber) Probe(ctx context.Context, addr string) (Protocols, error) {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	defer conn.Close()
 
 	err = probeHTTPTraffic(conn)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	return NewProtocols(HTTP), nil
 }
@@ -69,14 +69,14 @@ func newHTTPSProber() *httpsProber {
 func (p *httpsProber) Probe(ctx context.Context, addr string) (Protocols, error) {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	defer conn.Close()
 
 	conn = tls.Client(conn, p.TLSClientConfig)
 	err = probeHTTPTraffic(conn)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 
 	return NewProtocols(HTTPS), nil

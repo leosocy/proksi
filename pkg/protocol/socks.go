@@ -114,17 +114,17 @@ func (p *socks4Prober) parseConnectReply(resp []byte) error {
 func (p *socks4Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	defer conn.Close()
 
 	resp, err := p.socks4Connect(conn, "google.com:80")
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	err = p.parseConnectReply(resp)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	return NewProtocols(SOCKS4), nil
 }
@@ -237,17 +237,17 @@ func (p *socks5Prober) parseConnectReply(resp []byte) error {
 func (p *socks5Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	defer conn.Close()
 
 	resp, err := p.socks5Connect(conn, "google.com:80")
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	err = p.parseConnectReply(resp)
 	if err != nil {
-		return EmptyProtocols, err
+		return NothingProtocols, err
 	}
 	return NewProtocols(SOCKS5), nil
 }

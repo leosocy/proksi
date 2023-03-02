@@ -21,7 +21,7 @@ func TestSOCKS4Prober_Probe(t *testing.T) {
 
 	protocols, err = prober.Probe(ctx, "142.54.228.193:4145")
 	assert.NotNil(err)
-	assert.Equal(EmptyProtocols, protocols)
+	assert.Equal(NothingProtocols, protocols)
 }
 
 func TestSocks5Prober_Probe(t *testing.T) {
@@ -34,5 +34,5 @@ func TestSocks5Prober_Probe(t *testing.T) {
 
 	protocols, err = prober.Probe(ctx, "142.54.228.193:4145")
 	assert.NotNil(err)
-	assert.Equal(EmptyProtocols, protocols)
+	assert.Equal(NothingProtocols, protocols)
 }

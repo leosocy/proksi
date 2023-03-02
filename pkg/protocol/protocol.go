@@ -50,8 +50,8 @@ const (
 	// See https://www.rfc-editor.org/rfc/rfc1928 for more details.
 	SOCKS5 Protocol = 1 << 3
 
-	// Unknown means the protocol is unknown.
-	Unknown Protocol = 1 << 7
+	// Nothing means the protocol is unknown.
+	Nothing Protocol = 0
 )
 
 // String returns a string representation of Protocol
@@ -66,7 +66,7 @@ func (proto Protocol) String() string {
 	case SOCKS5:
 		return "socks5"
 	default:
-		return "unknown"
+		return "nothing"
 	}
 }
 
@@ -83,7 +83,7 @@ func ParseProtocol(s string) Protocol {
 	case "socks5":
 		return SOCKS5
 	default:
-		return Unknown
+		return Nothing
 	}
 }
 
@@ -91,7 +91,7 @@ func ParseProtocol(s string) Protocol {
 type Protocols uint8
 
 const (
-	EmptyProtocols Protocols = 0
+	NothingProtocols Protocols = 0
 )
 
 // Supports returns whether the protocol is supported
@@ -128,7 +128,7 @@ func NewProtocols(protos ...Protocol) Protocols {
 // Prober is an interface for detecting which protocols a proxy server supports.
 type Prober interface {
 	// Probe returns the protocols supported by the proxy.
-	// If no protocols are supported, return EmptyProtocols and an error represents why not support.
+	// If no protocols are supported, return NothingProtocols and an error represents why not support.
 	// The addr parameter should be in the format "host:port", for example "1.2.3.4:1080", "proksi.io:1080"
 	Probe(ctx context.Context, addr string) (Protocols, error)
 }
