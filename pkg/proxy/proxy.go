@@ -8,7 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/leosocy/proksi/pkg/geolocation"
 	"github.com/leosocy/proksi/pkg/protocol"
+	"github.com/leosocy/proksi/pkg/quality"
 	"github.com/leosocy/proksi/pkg/traffic"
 	"net"
 	"net/netip"
@@ -29,8 +31,8 @@ type Proxy struct {
 	Protocols   protocol.Protocols
 	Traffic     traffic.Traffics
 	Anonymity   Anonymity
-	Quality     Quality
-	Geolocation *Geolocation
+	Quality     quality.Quality
+	Geolocation *geolocation.Geolocation
 	CreatedAt   time.Time
 	CheckedAt   time.Time
 
@@ -66,7 +68,7 @@ func NewProxy(ip, port string) (*Proxy, error) {
 }
 
 // DetectGeoInfo set the Geolocation field value by calling `NewGeoInfo`
-func (p *Proxy) DetectGeoInfo(locator Geolocator) (err error) {
+func (p *Proxy) DetectGeoInfo(locator geolocation.Geolocator) (err error) {
 	p.Geolocation, err = locator.Locate(context.Background(), p.IP.String())
 	return
 }
@@ -179,12 +181,12 @@ func (b *ProxyBuilder) Anonymity(anonymity Anonymity) *ProxyBuilder {
 	return b
 }
 
-func (b *ProxyBuilder) Quality(quality Quality) *ProxyBuilder {
+func (b *ProxyBuilder) Quality(quality quality.Quality) *ProxyBuilder {
 	b.proxy.Quality = quality
 	return b
 }
 
-func (b *ProxyBuilder) Geolocation(geolocation *Geolocation) *ProxyBuilder {
+func (b *ProxyBuilder) Geolocation(geolocation *geolocation.Geolocation) *ProxyBuilder {
 	b.proxy.Geolocation = geolocation
 	return b
 }

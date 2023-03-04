@@ -28,7 +28,7 @@ type Scheduler struct {
 	cachedChan       proxy.CachedChan
 	scoreChecker     quality.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
-	geolocator       proxy.Geolocator
+	geolocator       geolocation.Geolocator
 	backend          backend.NotifyBackend
 	logger           *logrus.Logger
 }

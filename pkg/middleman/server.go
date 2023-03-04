@@ -32,6 +32,7 @@ func NewServer(nb backend.NotifyBackend) *Server {
 	}
 	s.Verbose = true
 	s.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	// TODO: 设置Transport.Proxy，包装Transport.RoundTrip 处理err实现。不要重写整个RoundTripper
 	s.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (request *http.Request, response *http.Response) {
 		ctx.RoundTripper = s.sm
 		return req, nil

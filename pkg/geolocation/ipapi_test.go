@@ -7,7 +7,6 @@ package geolocation
 import (
 	"context"
 	"fmt"
-	"github.com/leosocy/proksi/pkg/proxy"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -51,7 +50,7 @@ func TestIpapiGeoLocator(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		wantInfo *proxy.Geolocation
+		wantInfo *Geolocation
 		wantErr  bool
 	}{
 		{
@@ -75,7 +74,7 @@ func TestIpapiGeoLocator(t *testing.T) {
 		{
 			name: "IpapiSuccessResponse",
 			args: args{ip: "1.2.3.4", fakeResp: fakeIpapiResp("success", "")},
-			wantInfo: &proxy.Geolocation{
+			wantInfo: &Geolocation{
 				CountryName: "United States",
 				CountryCode: "US",
 				RegionName:  "Virginia",

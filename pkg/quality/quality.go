@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-package proxy
+package quality
 
 import (
 	"context"
@@ -19,5 +19,5 @@ type Quality struct {
 }
 
 type Qualifier interface {
-	Qualify(ctx context.Context, proxy *Proxy) (Quality, error)
+	Qualify(ctx context.Context, addr string) (Quality, error)
 }

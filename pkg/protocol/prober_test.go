@@ -14,7 +14,7 @@ import (
 func TestCombinedProber_Probe(t *testing.T) {
 	assert := assert.New(t)
 	prober := newCombinedProber()
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 7*time.Second)
 	protocols, err := prober.Probe(ctx, "220.95.248.56:1080")
 	assert.Nil(err)
 	assert.Equal(NewProtocols(SOCKS5, SOCKS4), protocols)

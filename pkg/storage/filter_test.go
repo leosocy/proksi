@@ -5,6 +5,7 @@
 package storage
 
 import (
+	"github.com/leosocy/proksi/pkg/quality"
 	"net"
 	"testing"
 
@@ -38,7 +39,7 @@ func TestFilterScore(t *testing.T) {
 		},
 	}
 	for _, data := range testData {
-		filter := FilterUptime(proxy.Uptime(data.threshold))
+		filter := FilterUptime(quality.Uptime(data.threshold))
 		proxies := filter(data.proxies)
 		assert.Equal(data.count, len(proxies))
 	}

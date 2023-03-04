@@ -6,6 +6,7 @@ package storage
 
 import (
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/quality"
 )
 
 // Filter is used to filter a proxy during the selection process
@@ -13,7 +14,7 @@ type Filter func([]*proxy.Proxy) []*proxy.Proxy
 
 // FilterUptime is a proxy.Uptime based Select Filter which will
 // only return proxies which uptime >= threshold
-func FilterUptime(threshold proxy.Uptime) Filter {
+func FilterUptime(threshold quality.Uptime) Filter {
 	return func(old []*proxy.Proxy) []*proxy.Proxy {
 		var proxies []*proxy.Proxy
 		for _, pxy := range old {
