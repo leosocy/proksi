@@ -41,6 +41,7 @@ const (
 	// SOCKS4 means the client communicates with the proxy through the SOCKS4 protocol,
 	// It allows a client to connect to a server and request that the server establish a connection to
 	// another host on behalf of the client, it can handle traffic.HTTP(s) and traffic.TCP traffic.
+	//
 	// SOCKS4 does not support authentication, and it only supports IPv4 addresses.
 	// It has largely been replaced by SOCKS5, which adds support for authentication, IPv6 addresses, and other features.
 	SOCKS4 Protocol = 1 << 2

@@ -7,18 +7,23 @@ package protocol
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"net"
+	"os"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type socks4Prober struct {
 	dialer *net.Dialer
+	logger zerolog.Logger
 }
 
 func newSOCKS4Prober() *socks4Prober {
 	return &socks4Prober{
 		dialer: &net.Dialer{},
+		logger: zerolog.New(os.Stderr).With().Str("module", "protocol").Str("prober", "SOCKS4").Logger(),
 	}
 }
 
@@ -111,31 +116,39 @@ func (p *socks4Prober) parseConnectReply(resp []byte) error {
 	}
 }
 
-func (p *socks4Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *socks4Prober) doProbe(ctx context.Context, addr string) error {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return NothingProtocols, err
+		return err
 	}
 	defer conn.Close()
 
 	resp, err := p.socks4Connect(conn, "google.com:80")
 	if err != nil {
-		return NothingProtocols, err
+		return err
 	}
 	err = p.parseConnectReply(resp)
-	if err != nil {
+	return nil
+}
+
+func (p *socks4Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+	if err := p.doProbe(ctx, addr); err != nil {
+		p.logger.Debug().Str("addr", addr).Err(err).Msg("")
 		return NothingProtocols, err
 	}
+	p.logger.Debug().Str("addr", addr).Msg("success")
 	return NewProtocols(SOCKS4), nil
 }
 
 type socks5Prober struct {
 	dialer *net.Dialer
+	logger zerolog.Logger
 }
 
 func newSOCKS5Prober() *socks5Prober {
 	return &socks5Prober{
 		dialer: &net.Dialer{},
+		logger: zerolog.New(os.Stderr).With().Str("module", "protocol").Str("prober", "SOCKS5").Logger(),
 	}
 }
 
@@ -234,20 +247,26 @@ func (p *socks5Prober) parseConnectReply(resp []byte) error {
 	}
 }
 
-func (p *socks5Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *socks5Prober) doProbe(ctx context.Context, addr string) error {
 	conn, err := dialContext(p.dialer, ctx, addr)
 	if err != nil {
-		return NothingProtocols, err
+		return err
 	}
 	defer conn.Close()
 
 	resp, err := p.socks5Connect(conn, "google.com:80")
 	if err != nil {
-		return NothingProtocols, err
+		return err
 	}
 	err = p.parseConnectReply(resp)
-	if err != nil {
+	return err
+}
+
+func (p *socks5Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+	if err := p.doProbe(ctx, addr); err != nil {
+		p.logger.Debug().Str("addr", addr).Err(err).Msg("")
 		return NothingProtocols, err
 	}
+	p.logger.Debug().Str("addr", addr).Msg("success")
 	return NewProtocols(SOCKS5), nil
 }

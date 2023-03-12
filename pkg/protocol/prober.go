@@ -6,8 +6,9 @@ package protocol
 
 import (
 	"context"
-	"github.com/Sirupsen/logrus"
+	"github.com/rs/zerolog"
 	"net"
+	"os"
 	"sync"
 )
 
@@ -26,8 +27,9 @@ func dialContext(dialer *net.Dialer, ctx context.Context, addr string) (net.Conn
 	return conn, nil
 }
 
-type combinedProber struct {
+type compositeProber struct {
 	probers []Prober
+	logger  zerolog.Logger
 }
 
 type probeResult struct {
@@ -36,18 +38,19 @@ type probeResult struct {
 	err       error
 }
 
-func newCombinedProber() *combinedProber {
-	return &combinedProber{
+func newCombinedProber() *compositeProber {
+	return &compositeProber{
 		probers: []Prober{
 			newSOCKS5Prober(),
 			newSOCKS4Prober(),
 			newHTTPSProber(),
 			newHTTPProber(),
 		},
+		logger: zerolog.New(os.Stderr).With().Str("module", "protocol").Str("prober", "COMPOSITE").Logger(),
 	}
 }
 
-func (p *combinedProber) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *compositeProber) Probe(ctx context.Context, addr string) (Protocols, error) {
 	wg := sync.WaitGroup{}
 	ch := make(chan probeResult)
 
@@ -68,15 +71,12 @@ func (p *combinedProber) Probe(ctx context.Context, addr string) (Protocols, err
 
 	protocols := NothingProtocols
 	for pe := range ch {
-		if pe.err != nil {
-			logrus.Debugf("protocol: %T err %v", pe.prober, pe.err)
-		} else {
-			logrus.Debugf("protocol: %T probe result: %s", pe.prober, pe.protocols)
+		if pe.err == nil {
 			protocols = protocols.Combine(pe.protocols)
 		}
 	}
 	if protocols == NothingProtocols {
-		logrus.Warnf("protocol: all probes fail, nothing protocols are supported")
+		p.logger.Info().Str("addr", addr).Msg("all probers failed, nothing protocols are supported")
 	}
 
 	return protocols, nil
