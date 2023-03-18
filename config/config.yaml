@@ -17,7 +17,7 @@ spiders:
     page:
       from: 1
       to: 11
-  89ip:
-    base: 'https://api.89ip.cn/tqdl.html?api=1'
+  ip89:
+    base: 'http://api.89ip.cn/tqdl.html?api=1'
     api:
       num: 500

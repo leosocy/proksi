@@ -17,7 +17,7 @@ import (
 func TestNewRegexParser(t *testing.T) {
 	type args struct {
 		name   string
-		config *RegexpParserConfig
+		config *RegexParserConfig
 	}
 	tests := []struct {
 		name    string
@@ -27,19 +27,19 @@ func TestNewRegexParser(t *testing.T) {
 	}{
 		{
 			name:    "InvalidRegexp",
-			args:    args{"test", &RegexpParserConfig{Expr: struct{ ipport string }{ipport: "\\"}}},
+			args:    args{"test", &RegexParserConfig{Expr: struct{ IPPort string }{IPPort: "\\"}}},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "InvalidRegexpSubexp",
-			args:    args{"test", &RegexpParserConfig{Expr: struct{ ipport string }{ipport: `(?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d+`}}},
+			args:    args{"test", &RegexParserConfig{Expr: struct{ IPPort string }{IPPort: `(?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d+`}}},
 			want:    nil,
 			wantErr: true,
 		},
 		{
 			name: "Ok",
-			args: args{"test", &RegexpParserConfig{Expr: struct{ ipport string }{ipport: `(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d{1,5})`}}},
+			args: args{"test", &RegexParserConfig{Expr: struct{ IPPort string }{IPPort: `(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d{1,5})`}}},
 			want: &regexParser{
 				ipport: struct {
 					regex   *regexp.Regexp
@@ -86,7 +86,7 @@ func flatten(proxies []*proxy.Proxy) string {
 }
 
 func TestRegexParser_HandleResponse(t *testing.T) {
-	parser, _ := newRegexParser("test", &RegexpParserConfig{Expr: struct{ ipport string }{ipport: `(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d{1,5})`}})
+	parser, _ := newRegexParser("test", &RegexParserConfig{Expr: struct{ IPPort string }{IPPort: `(?P<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(?P<port>\d{1,5})`}})
 
 	type args struct {
 		resp *colly.Response

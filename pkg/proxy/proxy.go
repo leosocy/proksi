@@ -7,18 +7,20 @@ package proxy
 import (
 	"context"
 	"fmt"
-	"github.com/leosocy/proksi/pkg/geolocation"
-	"github.com/leosocy/proksi/pkg/protocol"
-	"github.com/leosocy/proksi/pkg/quality"
-	"github.com/leosocy/proksi/pkg/traffic"
-	"github.com/pkg/errors"
-	"go.uber.org/multierr"
 	"net"
 	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
+	"go.uber.org/multierr"
+
+	"github.com/leosocy/proksi/pkg/geolocation"
+	"github.com/leosocy/proksi/pkg/protocol"
+	"github.com/leosocy/proksi/pkg/quality"
+	"github.com/leosocy/proksi/pkg/traffic"
 )
 
 // MaximumScore 代理最大得分
@@ -92,7 +94,7 @@ func (p *Proxy) URL() string {
 }
 
 func (p *Proxy) String() string {
-	return p.IP.String()
+	return p.AddrPort.String()
 }
 
 func (p *Proxy) Equal(to *Proxy) bool {
@@ -180,4 +182,12 @@ func (b *Builder) Build() (*Proxy, error) {
 	}
 
 	return b.proxy, nil
+}
+
+func (b *Builder) MustBuild() *Proxy {
+	pxy, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return pxy
 }

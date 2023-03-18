@@ -34,16 +34,16 @@ type XpathParserConfig struct {
 	}
 }
 
-type RegexpParserConfig struct {
+type RegexParserConfig struct {
 	Expr struct {
-		ipport string
+		IPPort string
 	}
 }
 
 type ParserConfig struct {
-	Type   string
-	Xpath  *XpathParserConfig
-	Regexp *RegexpParserConfig
+	Type  string
+	Xpath *XpathParserConfig
+	Regex *RegexParserConfig
 }
 
 // xpathParser is a ProxyParser implementation that extracts proxies from HTML or XML documents using XPath expressions.
@@ -118,7 +118,7 @@ func (p *xpathParser) HandleResponse(resp *colly.Response, collector proxy.Colle
 // regexParser is a ProxyParser implementation that extracts proxies from HTML or XML documents using regular expressions.
 type regexParser struct {
 	name   string
-	config *RegexpParserConfig
+	config *RegexParserConfig
 	ipport struct {
 		regex   *regexp.Regexp // regular expression to match IP and port
 		ipIdx   int            // index of IP subexpression in the regular expression
@@ -143,15 +143,15 @@ func (p *regexParser) HandleResponse(resp *colly.Response, collector proxy.Colle
 		}
 	}
 }
-func newRegexParser(name string, config *RegexpParserConfig) (*regexParser, error) {
+func newRegexParser(name string, config *RegexParserConfig) (*regexParser, error) {
 	var err error
 	parser := &regexParser{
 		name:   name,
 		config: config,
 		logger: zerolog.New(os.Stderr).With().Str("module", "spider").Str("name", name).Str("parser", "regex").Logger(),
 	}
-	if config.Expr.ipport != "" {
-		if parser.ipport.regex, err = regexp.Compile(config.Expr.ipport); err != nil {
+	if config.Expr.IPPort != "" {
+		if parser.ipport.regex, err = regexp.Compile(config.Expr.IPPort); err != nil {
 			return nil, err
 		}
 		parser.ipport.ipIdx = parser.ipport.regex.SubexpIndex("ip")
@@ -168,7 +168,7 @@ func NewProxyParser(name string, config *ParserConfig) (ProxyParser, error) {
 	case "xpath":
 		return newXpathParser(name, config.Xpath)
 	case "regex":
-		return newRegexParser(name, config.Regexp)
+		return newRegexParser(name, config.Regex)
 	default:
 		return nil, errors.New(fmt.Sprintf("spider: unsupported parser type: %s", config.Type))
 	}
