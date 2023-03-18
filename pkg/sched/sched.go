@@ -22,11 +22,11 @@ import (
 	"github.com/leosocy/proksi/pkg/utils"
 )
 
-// Scheduler responsible for scheduling cooperation between Spider,Checker and Backend.
+// Scheduler responsible for scheduling cooperation between Spider_OLD,Checker and Backend.
 type Scheduler struct {
 	spiders          []*spider.Spider
 	cachedChan       proxy.CachedChan
-	scoreChecker     quality.Scorer
+	scoreChecker     proxy.Scorer
 	reqHeadersGetter utils.RequestHeadersGetter
 	geolocator       geolocation.Geolocator
 	backend          backend.NotifyBackend
@@ -36,9 +36,9 @@ type Scheduler struct {
 // NewScheduler returns a new scheduler instance with default configuration.
 func NewScheduler() *Scheduler {
 	sc := &Scheduler{
-		spiders:          spider.BuildAndInitAll(),
+		spiders:          []*spider.Spider{},
 		cachedChan:       proxy.NewBloomCachedChan(),
-		scoreChecker:     quality.NewBatchHTTPSScorer(quality.HostsOfBatchHTTPSScorer),
+		scoreChecker:     proxy.NewBatchHTTPSScorer(quality.HostsOfBatchHTTPSScorer),
 		reqHeadersGetter: utils.HTTPBinUtil{Timeout: 5 * time.Second},
 		geolocator:       geolocation.NewIpapiGeolocator(),
 		backend:          backend.WithNotifier(backend.NewInMemoryBackend(), &pubsub.BaseNotifier{}),
@@ -97,15 +97,6 @@ func (sc *Scheduler) completeProxy(pxy *proxy.Proxy) {
 	entry := sc.logger.WithFields(logrus.Fields{
 		"url": pxy.URL(),
 	})
-	if pxy.Anonymity == proxy.AnonymityUnknown {
-		if err := pxy.DetectAnonymity(sc.reqHeadersGetter); err != nil {
-			entry.Warnf("Failed to detect anonymity, %v", err)
-		} else {
-			if err := sc.backend.Update(pxy); err == nil {
-				entry.Info("Updated anonymity")
-			}
-		}
-	}
 	if pxy.Geolocation == nil {
 		if err := pxy.DetectGeoInfo(sc.geolocator); err != nil {
 			entry.Warnf("Failed to detect geography information, %v", err)
@@ -156,13 +147,6 @@ func (sc *Scheduler) bgInspection(period time.Duration) {
 // bgCrawling when the number of proxies in backend is less than threshold, start crawling.
 func (sc *Scheduler) bgCrawling(threshold uint) {
 	for _, s := range sc.spiders {
-		go s.Start(sc.cachedChan)
-	}
-	// TODO: ProxyCountWatcher 监测当代理个数不足阈值时调度spider开启一次爬取
-	for {
-		for _, s := range sc.spiders {
-			s.TryCrawl()
-		}
-		time.Sleep(20 * time.Minute)
+		go s.Start()
 	}
 }

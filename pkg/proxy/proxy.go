@@ -6,20 +6,19 @@ package proxy
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/leosocy/proksi/pkg/geolocation"
 	"github.com/leosocy/proksi/pkg/protocol"
 	"github.com/leosocy/proksi/pkg/quality"
 	"github.com/leosocy/proksi/pkg/traffic"
+	"github.com/pkg/errors"
+	"go.uber.org/multierr"
 	"net"
 	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/leosocy/proksi/pkg/utils"
 )
 
 // MaximumScore 代理最大得分
@@ -44,68 +43,9 @@ type Proxy struct {
 	lock sync.RWMutex
 }
 
-// NewProxy passes in the ip, port, calculates the other field values,
-// and returns an initialized Proxy object
-func NewProxy(ip, port string) (*Proxy, error) {
-	if ip == "" || port == "" {
-		return nil, errors.New("empty ip or port")
-	}
-	parsedIP := net.ParseIP(strings.TrimSpace(ip))
-	if parsedIP == nil {
-		return nil, errors.New("invalid ip")
-	}
-	parsedPort, err := strconv.ParseUint(strings.TrimSpace(port), 10, 32)
-	if err != nil {
-		return nil, err
-	}
-	return &Proxy{
-		IP:        parsedIP,
-		Port:      uint32(parsedPort),
-		Score:     MaximumScore,
-		CreatedAt: time.Now(),
-		CheckedAt: time.Now(),
-	}, nil
-}
-
 // DetectGeoInfo set the Geolocation field value by calling `NewGeoInfo`
 func (p *Proxy) DetectGeoInfo(locator geolocation.Geolocator) (err error) {
 	p.Geolocation, err = locator.Locate(context.Background(), p.IP.String())
-	return
-}
-
-// DetectAnonymity use a `utils.RequestHeadersGetter` to get a http request headers,
-// and then use the following logic to determine the anonymity
-//
-// If `X-Real-Ip` is equal to the public ip, the anonymity is `Transparent`.
-// If `X-Real-Ip` is not equal to the public ip,
-// and `Via` field exists, the anonymity is `Anonymous`.
-// Otherwise, the anonymity is `Elite`.
-func (p *Proxy) DetectAnonymity(g utils.RequestHeadersGetter) (err error) {
-	var (
-		headers, headersUsingProxy   utils.HTTPRequestHeaders
-		publicIP, publicIPUsingProxy net.IP
-	)
-	if headers, err = g.GetRequestHeaders(); err != nil {
-		return
-	}
-	if publicIP, err = headers.ParsePublicIP(); err != nil {
-		return
-	}
-	if headersUsingProxy, err = g.GetRequestHeadersUsingProxy(p.URL()); err != nil {
-		return
-	}
-	if publicIPUsingProxy, err = headersUsingProxy.ParsePublicIP(); err != nil {
-		return
-	}
-	if publicIP.Equal(publicIPUsingProxy) {
-		p.Anonymity = Transparent
-	} else {
-		if headersUsingProxy.Via != "" {
-			p.Anonymity = Anonymous
-		} else {
-			p.Anonymity = Elite
-		}
-	}
 	return
 }
 
@@ -139,6 +79,10 @@ func (p *Proxy) AddScore(delta int8) {
 	p.CheckedAt = time.Now()
 }
 
+func (p *Proxy) IsValid() bool {
+	return p.AddrPort.IsValid() && p.Protocols.IsValid()
+}
+
 // URL returns string like `ip:port`
 func (p *Proxy) URL() string {
 	if len(p.IP) == 0 || p.Port == 0 {
@@ -152,55 +96,88 @@ func (p *Proxy) String() string {
 }
 
 func (p *Proxy) Equal(to *Proxy) bool {
-	return p.IP.Equal(to.IP)
+	return p.AddrPort.Addr().Compare(to.AddrPort.Addr()) == 0 && p.AddrPort.Port() == to.AddrPort.Port()
 }
 
-// Proxy builder pattern code
-type ProxyBuilder struct {
+// Builder is a builder pattern code
+type Builder struct {
+	ip   netip.Addr
+	port uint16
+
 	proxy *Proxy
+	err   error
 }
 
-func NewProxyBuilder() *ProxyBuilder {
-	proxy := &Proxy{}
-	b := &ProxyBuilder{proxy: proxy}
+func NewBuilder() *Builder {
+	proxy := &Proxy{
+		Protocols: protocol.NothingProtocols,
+		Anonymity: AnonymityUnknown,
+		CreatedAt: time.Now(),
+	}
+	b := &Builder{proxy: proxy}
 	return b
 }
 
-func (b *ProxyBuilder) AddrPort(addrPort netip.AddrPort) *ProxyBuilder {
-	b.proxy.AddrPort = addrPort
+func (b *Builder) IP(ip string) *Builder {
+	parsedIP, err := netip.ParseAddr(strings.TrimSpace(ip))
+	if err != nil {
+		b.err = multierr.Append(b.err, err)
+	} else {
+		b.ip = parsedIP
+	}
 	return b
 }
 
-func (b *ProxyBuilder) Protocols(protocols protocol.Protocols) *ProxyBuilder {
+func (b *Builder) Port(port string) *Builder {
+	parsedPort, err := strconv.ParseUint(strings.TrimSpace(port), 10, 16)
+	if err != nil {
+		b.err = multierr.Append(b.err, err)
+	} else {
+		b.port = uint16(parsedPort)
+	}
+	return b
+}
+
+func (b *Builder) AddrPort(s string) *Builder {
+	ipp, err := netip.ParseAddrPort(s)
+	if err != nil {
+		b.err = multierr.Append(b.err, err)
+	} else {
+		b.ip = ipp.Addr()
+		b.port = ipp.Port()
+	}
+	return b
+}
+
+func (b *Builder) Protocols(protocols protocol.Protocols) *Builder {
 	b.proxy.Protocols = protocols
 	return b
 }
 
-func (b *ProxyBuilder) Anonymity(anonymity Anonymity) *ProxyBuilder {
+func (b *Builder) Anonymity(anonymity Anonymity) *Builder {
 	b.proxy.Anonymity = anonymity
 	return b
 }
 
-func (b *ProxyBuilder) Quality(quality quality.Quality) *ProxyBuilder {
+func (b *Builder) Quality(quality quality.Quality) *Builder {
 	b.proxy.Quality = quality
 	return b
 }
 
-func (b *ProxyBuilder) Geolocation(geolocation *geolocation.Geolocation) *ProxyBuilder {
+func (b *Builder) Geolocation(geolocation *geolocation.Geolocation) *Builder {
 	b.proxy.Geolocation = geolocation
 	return b
 }
 
-func (b *ProxyBuilder) Port(port uint32) *ProxyBuilder {
-	b.proxy.Port = port
-	return b
-}
+func (b *Builder) Build() (*Proxy, error) {
+	if b.err != nil {
+		return nil, b.err
+	}
 
-func (b *ProxyBuilder) Score(score int8) *ProxyBuilder {
-	b.proxy.Score = score
-	return b
-}
+	b.proxy.AddrPort = netip.AddrPortFrom(b.ip, b.port)
+	if !b.proxy.AddrPort.IsValid() {
+		return nil, errors.New("invalid ip:port " + strconv.Quote(b.proxy.AddrPort.String()))
+	}
 
-func (b *ProxyBuilder) Build() (*Proxy, error) {
 	return b.proxy, nil
 }

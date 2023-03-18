@@ -104,6 +104,10 @@ func (protos Protocols) Combine(other Protocols) Protocols {
 	return protos | other
 }
 
+func (protos Protocols) IsValid() bool {
+	return uint8(protos) >= uint8(HTTP)
+}
+
 func (protos Protocols) String() string {
 	names := make([]string, 0, 2)
 	for i := 0; i < 8; i++ {

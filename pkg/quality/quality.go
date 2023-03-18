@@ -14,10 +14,11 @@ import (
 type Uptime float64
 
 type Quality struct {
+	// Latency represents the time elapsed when dial to proxy.
 	Latency time.Duration `json:"latency"`
 	Uptime  Uptime        `json:"uptime"`
 }
 
 type Qualifier interface {
-	Qualify(ctx context.Context, addr string) (Quality, error)
+	Qualify(ctx context.Context, proxyURL string) (Quality, error)
 }

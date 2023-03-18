@@ -13,8 +13,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"go.uber.org/ratelimit"
-
-	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 type ipapiResponse struct {
@@ -35,8 +33,8 @@ func (resp *ipapiResponse) isSuccess() bool {
 	return resp.Status == "success"
 }
 
-func (resp *ipapiResponse) toGeolocation() *proxy.Geolocation {
-	return &proxy.Geolocation{
+func (resp *ipapiResponse) toGeolocation() *Geolocation {
+	return &Geolocation{
 		CountryName: resp.CountryName,
 		CountryCode: resp.CountryCode,
 		RegionName:  resp.RegionName,
@@ -65,11 +63,11 @@ func NewIpapiGeolocator() *IpapiGeolocator {
 	return loc
 }
 
-func (loc *IpapiGeolocator) Name() proxy.GeolocatorName {
+func (loc *IpapiGeolocator) Name() GeolocatorName {
 	return "ip-api"
 }
 
-func (loc *IpapiGeolocator) Locate(ctx context.Context, ip string) (*proxy.Geolocation, error) {
+func (loc *IpapiGeolocator) Locate(ctx context.Context, ip string) (*Geolocation, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf(loc.baseURL, ip), nil)
 	if err != nil {
 		return nil, err

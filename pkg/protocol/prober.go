@@ -6,10 +6,11 @@ package protocol
 
 import (
 	"context"
-	"github.com/rs/zerolog"
 	"net"
 	"os"
 	"sync"
+
+	"github.com/rs/zerolog"
 )
 
 func dialContext(dialer *net.Dialer, ctx context.Context, addr string) (net.Conn, error) {

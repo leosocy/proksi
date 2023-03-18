@@ -9,11 +9,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/rs/zerolog"
 	"net"
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
 // httpProber probe HTTP and HTTPS protocol.

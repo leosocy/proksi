@@ -1,6 +1,6 @@
-// Copyright (c) 2019 leosocy, leosocy@gmail.com
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file.
+// Copyright 2023 The proksi Authors. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
 
 package geolocation
 

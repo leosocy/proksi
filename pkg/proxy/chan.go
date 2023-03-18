@@ -39,7 +39,7 @@ type BloomCachedChan struct {
 }
 
 func (cc *BloomCachedChan) Send(ip, port string) {
-	if pxy, err := NewProxy(ip, port); err == nil {
+	if pxy, err := NewBuilder().IP(ip).Port(port).Build(); err == nil {
 		hasher := fnv.New64()
 		if _, err := hasher.Write(pxy.IP); err == nil &&
 			!cc.entryBf.Contains(hasher) {

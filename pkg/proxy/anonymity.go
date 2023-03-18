@@ -43,14 +43,13 @@ func (anno Anonymity) String() string {
 
 func ParseAnonymity(s string) Anonymity {
 	s = strings.ToLower(strings.ReplaceAll(s, ` `, ""))
-	switch s {
-	case "elite":
+	if strings.Contains(s, "高匿") || strings.Contains(s, "elite") {
 		return Elite
-	case "anonymous":
+	} else if strings.Contains(s, "普通") || strings.Contains(s, "普匿") || strings.Contains(s, "anonymous") {
 		return Anonymous
-	case "transparent":
+	} else if strings.Contains(s, "transparent") || strings.Contains(s, "透明") {
 		return Transparent
-	default:
+	} else {
 		return AnonymityUnknown
 	}
 }

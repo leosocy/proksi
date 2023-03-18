@@ -5,117 +5,63 @@
 package proxy
 
 import (
-	"errors"
-	"net"
+	"net/netip"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-
-	"github.com/leosocy/proksi/mocks"
-	"github.com/leosocy/proksi/pkg/utils"
 )
 
-func TestNewProxy(t *testing.T) {
-	type args struct {
-		ip   string
-		port string
-	}
+func TestBuilder(t *testing.T) {
 	tests := []struct {
 		name    string
-		args    args
+		builder *Builder
 		want    *Proxy
 		wantErr bool
 	}{
 		{
 			name:    "IPPortStringWithSpace",
-			args:    args{ip: "1.2.3.4 ", port: "1234"},
-			want:    &Proxy{IP: net.ParseIP("1.2.3.4"), Port: 1234},
+			builder: NewBuilder().IP("1.2.3.4 ").Port(" 1234"),
+			want:    &Proxy{AddrPort: netip.MustParseAddrPort("1.2.3.4:1234")},
 			wantErr: false,
+		},
+		{
+			name:    "InvalidIP",
+			builder: NewBuilder().AddrPort("1.2.3.:1234"),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidPort",
+			builder: NewBuilder().AddrPort("1.2.3.4:"),
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "InvalidIPPort",
+			builder: NewBuilder().IP("1.2.3.").Port(""),
+			want:    nil,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewProxy(tt.args.ip, tt.args.port)
+			got, err := tt.builder.Build()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewProxy() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Builder error got = %+v, wantErr %+v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got.IP, tt.want.IP) {
-				t.Errorf("NewProxy().IP = %v, want %v", got.IP, tt.want)
+			if (tt.want == nil && got != nil) || (tt.want != nil && got == nil) || (tt.want != nil && !reflect.DeepEqual(got.AddrPort, tt.want.AddrPort)) {
+				t.Errorf("Builder proxy got = %+v, want %+v", got, tt.want)
+				return
 			}
 		})
 	}
 }
 
-func TestProxy_DetectAnonymity_Unknown(t *testing.T) {
-	assert := assert.New(t)
-	pxy := &Proxy{}
-	g := new(mocks.RequestHeadersGetter)
-	g.On("GetRequestHeaders", mock.Anything).Return(
-		utils.HTTPRequestHeaders{}, errors.New("error occur"),
-	)
-	g.On("GetRequestHeadersUsingProxy", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "1.2.3.4"}, nil,
-	)
-	err := pxy.DetectAnonymity(g)
-	g.AssertNumberOfCalls(t, "GetRequestHeadersUsingProxy", 0)
-	assert.NotNil(err)
-	assert.Equal(AnonymityUnknown, pxy.Anonymity)
-}
-
-func TestProxy_DetectAnonymity_Transparent(t *testing.T) {
-	assert := assert.New(t)
-	pxy := &Proxy{}
-	g := new(mocks.RequestHeadersGetter)
-	g.On("GetRequestHeaders", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "1.2.3.4, 5.6.7.8"}, nil,
-	)
-	g.On("GetRequestHeadersUsingProxy", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "1.2.3.4"}, nil,
-	)
-	err := pxy.DetectAnonymity(g)
-	g.AssertExpectations(t)
-	assert.Nil(err)
-	assert.Equal(Transparent, pxy.Anonymity)
-}
-
-func TestProxy_DetectAnonymity_Anonymous(t *testing.T) {
-	assert := assert.New(t)
-	pxy := &Proxy{}
-	g := new(mocks.RequestHeadersGetter)
-	g.On("GetRequestHeaders", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "1.2.3.4"}, nil,
-	)
-	g.On("GetRequestHeadersUsingProxy", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "5.6.7.8", Via: "squid"}, nil,
-	)
-	err := pxy.DetectAnonymity(g)
-	g.AssertExpectations(t)
-	assert.Nil(err)
-	assert.Equal(Anonymous, pxy.Anonymity)
-}
-
-func TestProxy_DetectAnonymity_Elite(t *testing.T) {
-	assert := assert.New(t)
-	pxy := &Proxy{}
-	g := new(mocks.RequestHeadersGetter)
-	g.On("GetRequestHeaders", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "1.2.3.4"}, nil,
-	)
-	g.On("GetRequestHeadersUsingProxy", mock.Anything).Return(
-		utils.HTTPRequestHeaders{XForwardedFor: "5.6.7.8"}, nil,
-	)
-	err := pxy.DetectAnonymity(g)
-	g.AssertExpectations(t)
-	assert.Nil(err)
-	assert.Equal(Elite, pxy.Anonymity)
-}
-
 func TestProxy_Equal(t *testing.T) {
 	assert := assert.New(t)
-	one, _ := NewProxy("1.2.3.4", "80")
-	another, _ := NewProxy("1.2.3.4", "8080")
-	assert.True(one.Equal(another))
+	one, _ := NewBuilder().AddrPort("1.2.3.4:80").Build()
+	another, _ := NewBuilder().AddrPort("1.2.3.4:8080").Build()
+	assert.False(one.Equal(another))
 }

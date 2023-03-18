@@ -14,7 +14,7 @@ import (
 )
 
 func TestBaseNotifier(t *testing.T) {
-	pxy, _ := proxy.NewProxy("1.2.3.4", "80")
+	pxy, _ := proxy.NewBuilder().AddrPort("1.2.3.4:80").Build()
 	notifier := BaseNotifier{}
 	watcher := new(mocks.Watcher)
 	watcher.On("Receipt", mock.Anything).Return()

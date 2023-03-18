@@ -7,12 +7,12 @@ package protocol
 import (
 	"context"
 	"fmt"
-	"github.com/rs/zerolog"
 	"net"
 	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
 type socks4Prober struct {
