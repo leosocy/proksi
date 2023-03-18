@@ -1,0 +1,87 @@
+kuaidaili:
+  name: 快代理
+  enabled: true
+  urls:
+    {{- $from := int $.kuaidaili.page.from }}
+    {{- $to := int $.kuaidaili.page.to }}
+    {{- range .kuaidaili.types }}
+    {{- $type := . -}}
+    {{- range untilStep $from $to 1 }}
+    - {{ $.kuaidaili.base }}/{{ $type }}/{{ . }}/
+    {{- end }}
+    {{- end }}
+  parser:
+    type: xpath
+    xpath:
+      selector:
+        base: '//*[@id="list" or "freelist"]/table/tbody/tr'
+        ip: "td[@data-title='IP']"
+        port: "td[@data-title='PORT']"
+        anonymity: "td[@data-title='匿名度']"
+  rule:
+    interval: 6h
+    limit:
+      parallelism: 1
+      delay: 10s
+ip3366:
+  name: 云代理
+  enabled: true
+  urls:
+    {{- $from := int .ip3366.page.from }}
+    {{- $to := int .ip3366.page.to }}
+    {{- range .ip3366.types }}
+    {{- $type := . -}}
+    {{- range untilStep $from $to 1 }}
+    - {{ $.ip3366.base }}/?stype={{ $type }}&page={{ . }}
+    {{- end }}
+    {{- end }}
+  parser:
+    type: xpath
+    xpath:
+      selector:
+        base: '//*[@id="list"]/table/tbody/tr'
+        ip: 'td[1]'
+        port: 'td[2]'
+        anonymity: 'td[3]'
+  rule:
+    interval: 6h
+    limit:
+      parallelism: 2
+      delay: 10s
+kaixin:
+  name: 开心代理
+  enabled: true
+  urls:
+    {{- $from := int .kaixin.page.from }}
+      {{- $to := int .kaixin.page.to }}
+      {{- range .kaixin.types }}
+      {{- $type := . -}}
+      {{- range untilStep $from $to 1 }}
+      - {{ $.kaixin.base }}/{{ $type }}/{{ . }}.html
+      {{- end }}
+      {{- end }}
+  parser:
+    type: xpath
+    xpath:
+      selector:
+        base: '//*[@class="hot-product-content"]/table/tbody/tr'
+        ip: 'td[1]'
+        port: 'td[2]'
+        anonymity: 'td[3]'
+  rule:
+    interval: 6h
+    limit:
+      parallelism: 2
+      delay: 10s
+#ip89:
+#  name: 89ip
+#  enabled: true
+#  urls:
+#    - {{ $.ip89.base }}&num={{ $.ip89.api.num }}
+#  parser:
+#    type: xpath
+#    xpath:
+#      selector:
+#        base: '/html/body/br[position()>1]/following::text()'
+#        ipport: ''
+#
