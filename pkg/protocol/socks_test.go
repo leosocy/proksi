@@ -6,9 +6,10 @@ package protocol
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSOCKS4Prober_Probe(t *testing.T) {

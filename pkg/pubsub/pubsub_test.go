@@ -7,10 +7,9 @@ package pubsub
 import (
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"github.com/leosocy/proksi/mocks"
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestBaseNotifier(t *testing.T) {

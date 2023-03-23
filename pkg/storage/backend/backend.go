@@ -8,9 +8,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/leosocy/proksi/pkg/storage"
-
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/storage"
 )
 
 // Errors occur when using backend.

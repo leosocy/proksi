@@ -9,9 +9,8 @@ import (
 	"net"
 	"os"
 
-	"go.uber.org/multierr"
-
 	"github.com/rs/zerolog"
+	"go.uber.org/multierr"
 )
 
 func dialContext(dialer *net.Dialer, ctx context.Context, addr string) (net.Conn, error) {

@@ -7,11 +7,10 @@ package backend
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/leosocy/proksi/pkg/proxy"
 	"github.com/leosocy/proksi/pkg/pubsub"
 	"github.com/leosocy/proksi/pkg/storage"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertionWatcher(t *testing.T) {

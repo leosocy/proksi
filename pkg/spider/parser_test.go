@@ -5,13 +5,14 @@
 package spider
 
 import (
-	"github.com/gocolly/colly/v2"
-	"github.com/leosocy/proksi/pkg/proxy"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/gocolly/colly/v2"
+	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewXPathParser(t *testing.T) {

@@ -11,14 +11,13 @@ import (
 	"regexp"
 	"strings"
 
-	"golang.org/x/net/html"
-
 	"github.com/antchfx/htmlquery"
 	"github.com/antchfx/xmlquery"
 	"github.com/antchfx/xpath"
 	"github.com/gocolly/colly/v2"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"golang.org/x/net/html"
 
 	"github.com/leosocy/proksi/pkg/proxy"
 )

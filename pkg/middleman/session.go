@@ -11,15 +11,14 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/leosocy/proksi/pkg/loadbalancer"
-	"github.com/leosocy/proksi/pkg/storage"
-	"github.com/leosocy/proksi/pkg/storage/backend"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/elazarl/goproxy"
 	"github.com/pkg/errors"
 
+	"github.com/leosocy/proksi/pkg/loadbalancer"
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/storage"
+	"github.com/leosocy/proksi/pkg/storage/backend"
 )
 
 // session represents the connections between middleman and the real pxy server,

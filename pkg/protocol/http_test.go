@@ -7,9 +7,10 @@ package protocol
 import (
 	"context"
 	"crypto/tls"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func serveFakeHTTPProxy(t *testing.T, ln net.Listener) {

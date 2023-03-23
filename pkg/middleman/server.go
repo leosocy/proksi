@@ -7,10 +7,10 @@ package middleman
 import (
 	"net/http"
 
+	"github.com/elazarl/goproxy"
+
 	"github.com/leosocy/proksi/pkg/loadbalancer"
 	"github.com/leosocy/proksi/pkg/storage/backend"
-
-	"github.com/elazarl/goproxy"
 )
 
 // Server is a middleman between client and real pxy server.

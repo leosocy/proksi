@@ -5,13 +5,12 @@
 package storage
 
 import (
-	"github.com/leosocy/proksi/pkg/quality"
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/quality"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFilterScore(t *testing.T) {

@@ -7,18 +7,14 @@ package sched
 import (
 	"time"
 
-	"github.com/leosocy/proksi/pkg/geolocation"
-
-	"github.com/leosocy/proksi/pkg/quality"
-
-	"github.com/leosocy/proksi/pkg/pubsub"
-
-	"github.com/leosocy/proksi/pkg/storage/backend"
-
 	"github.com/Sirupsen/logrus"
 
+	"github.com/leosocy/proksi/pkg/geolocation"
 	"github.com/leosocy/proksi/pkg/proxy"
+	"github.com/leosocy/proksi/pkg/pubsub"
+	"github.com/leosocy/proksi/pkg/quality"
 	"github.com/leosocy/proksi/pkg/spider"
+	"github.com/leosocy/proksi/pkg/storage/backend"
 	"github.com/leosocy/proksi/pkg/utils"
 )
 

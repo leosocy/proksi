@@ -7,11 +7,12 @@ package spider
 import (
 	"bytes"
 	"fmt"
-	"github.com/antchfx/htmlquery"
-	"gopkg.in/yaml.v3"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/antchfx/htmlquery"
+	"gopkg.in/yaml.v3"
 )
 
 func TestRenderSpiders(t *testing.T) {
