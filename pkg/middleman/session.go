@@ -37,7 +37,7 @@ func newSession(pxy *proxy.Proxy, tr *http.Transport) *session {
 		tr:  tr,
 	}
 	session.tr.Proxy = func(request *http.Request) (url *url.URL, e error) {
-		return url.Parse(pxy.URL())
+		return pxy.URL(), nil
 	}
 	return session
 }

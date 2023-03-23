@@ -1,17 +1,7 @@
 package main
 
-import (
-	"net/http"
-
-	"github.com/leosocy/proksi/pkg/middleman"
-
-	"github.com/leosocy/proksi/pkg/sched"
-)
+import "github.com/leosocy/proksi/cmd"
 
 func main() {
-	scheduler := sched.NewScheduler()
-	go scheduler.Start()
-
-	middlemanServer := middleman.NewServer(scheduler.GetBackend())
-	http.ListenAndServe("0.0.0.0:8081", middlemanServer)
+	cmd.Execute()
 }

@@ -29,7 +29,7 @@ Or the client can use `proksi` as a data source to request the required proxy th
 
 ## Usage
 
-### middleman
+### mitm
 
 ### datasource
 
@@ -41,3 +41,16 @@ Or the client can use `proksi` as a data source to request the required proxy th
 ## TODO List
 
 - [ ] Spiders支持从config文件加载
+
+
+## Contributing
+
+Thank you for considering contributing to proksi! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security Vulnerabilities
+
+If you discover a security vulnerability within proksi, please send an e-mail to Leosocy via [leosocy@gmail.com](mailto:leosocy@gmail.com). All security vulnerabilities will be promptly addressed.
+
+## License
+
+The proksi is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

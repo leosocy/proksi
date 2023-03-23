@@ -4,7 +4,7 @@
 
 // that can be found in the LICENSE file.
 
-package quality
+package proxy
 
 import (
 	"net/http"
@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 func TestNewBatchHTTPSScorer(t *testing.T) {
@@ -30,7 +28,7 @@ func TestNewBatchHTTPSScorer(t *testing.T) {
 }
 
 func TestBatchHTTPSScorerCalculate(t *testing.T) {
-	pxy, _ := proxy.NewProxy("1.2.3.4", "80")
+	pxy, _ := NewBuilder().AddrPort("1.2.3.4:80").Build()
 	pxy.IP = []byte("")
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)

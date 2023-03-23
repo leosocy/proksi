@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file.
 
-package quality
+package proxy
 
 import (
 	"errors"
@@ -12,14 +12,12 @@ import (
 	"time"
 
 	"github.com/parnurzeal/gorequest"
-
-	"github.com/leosocy/proksi/pkg/proxy"
 )
 
 // Scorer is the interface used to score a proxy.
 type Scorer interface {
 	// Score calculates the proxy's score.
-	Score(pxy *proxy.Proxy) int8
+	Score(pxy *Proxy) int8
 }
 
 // BatchHTTPSScorer tryRequest visiting a batch of HTTPS websites
@@ -42,7 +40,7 @@ func NewBatchHTTPSScorer(hosts []string) Scorer {
 		panic(errors.New("length of hosts must be bigger than 2"))
 	}
 	// Ceil to make sure that the score is reduced to 0 when all tryRequest fails.
-	avg := math.Ceil(float64(proxy.MaximumScore) / float64(len(hosts)))
+	avg := math.Ceil(float64(MaximumScore) / float64(len(hosts)))
 	return &BatchHTTPSScorer{
 		hosts:   hosts,
 		timeout: time.Duration(avg*2) * time.Second,
@@ -51,9 +49,9 @@ func NewBatchHTTPSScorer(hosts []string) Scorer {
 
 // Score tryRequest to use proxy visit each host, and modifies
 // the corresponding proxy score based on the return value .
-func (s *BatchHTTPSScorer) Score(pxy *proxy.Proxy) int8 {
+func (s *BatchHTTPSScorer) Score(pxy *Proxy) int8 {
 	// since we don't tryRequest diff host parallel, so init request here to reduce mem cost.
-	sa := gorequest.New().Proxy(pxy.URL()).Timeout(s.timeout)
+	sa := gorequest.New().Proxy(pxy.URL().String()).Timeout(s.timeout)
 	for _, host := range s.hosts {
 		rt, _ := s.tryRequest(sa, host)
 		delta := (s.timeout/2 - rt).Seconds()
