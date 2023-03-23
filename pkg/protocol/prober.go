@@ -8,7 +8,8 @@ import (
 	"context"
 	"net"
 	"os"
-	"sync"
+
+	"go.uber.org/multierr"
 
 	"github.com/rs/zerolog"
 )
@@ -33,52 +34,37 @@ type compositeProber struct {
 	logger  zerolog.Logger
 }
 
-type probeResult struct {
-	prober    Prober
-	protocols Protocols
-	err       error
-}
-
 func newCombinedProber() *compositeProber {
 	return &compositeProber{
 		probers: []Prober{
-			newSOCKS5Prober(),
 			newSOCKS4Prober(),
-			newHTTPSProber(),
 			newHTTPProber(),
+			newSOCKS5Prober(),
+			newHTTPSProber(),
 		},
-		logger: zerolog.New(os.Stderr).With().Str("module", "protocol").Str("prober", "COMPOSITE").Logger(),
+		logger: zerolog.New(os.Stderr).With().Str("module", "protocol").Str("prober", "composite").Logger(),
 	}
 }
 
-func (p *compositeProber) Probe(ctx context.Context, addr string) (Protocols, error) {
-	wg := sync.WaitGroup{}
-	ch := make(chan probeResult)
-
+func (p *compositeProber) Probe(ctx context.Context, addr string) (Protocol, error) {
+	var me error
 	for _, prober := range p.probers {
-		wg.Add(1)
-		prober := prober
-		go func() {
-			defer wg.Done()
-			protocol, err := prober.Probe(ctx, addr)
-			ch <- probeResult{prober, protocol, err}
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	protocols := NothingProtocols
-	for pe := range ch {
-		if pe.err == nil {
-			protocols = protocols.Combine(pe.protocols)
+		protocol, err := prober.Probe(ctx, addr)
+		if err != nil {
+			me = multierr.Append(me, err)
+		} else {
+			return protocol, nil
 		}
 	}
-	if protocols == NothingProtocols {
-		p.logger.Info().Str("addr", addr).Msg("all probers failed, nothing protocols are supported")
-	}
+	return Nothing, me
+}
 
-	return protocols, nil
+var (
+	prober = newCombinedProber()
+)
+
+// Probe uses the default composite prober to probe the given address using multiple Prober.
+// It returns the first successful protocol and any errors encountered during probing if nothing protocol supported.
+func Probe(ctx context.Context, addr string) (Protocol, error) {
+	return prober.Probe(ctx, addr)
 }

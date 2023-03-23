@@ -27,24 +27,15 @@ func BenchmarkParseProtocol(b *testing.B) {
 	}
 }
 
-func TestProtocols(t *testing.T) {
-	assert := assert.New(t)
-	assert.Equal(Protocols(uint8(HTTP)|uint8(HTTPS)), NewProtocols(HTTP, HTTPS))
-	assert.True(NewProtocols(HTTP, HTTPS).Supports(HTTP))
-	assert.True(NewProtocols(HTTP, HTTPS).Supports(HTTPS))
-	assert.False(NewProtocols(HTTP, HTTPS).Supports(SOCKS4))
-}
-
-func BenchmarkNewProtocols(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		NewProtocols(HTTP, HTTPS)
+func FuzzParseProtocol(f *testing.F) {
+	testdata := []string{"htTp", "SOCKS4"}
+	for _, d := range testdata {
+		f.Add(d)
 	}
-}
 
-func BenchmarkProtocols_Contains(b *testing.B) {
-	protocols := NewProtocols(HTTP, HTTPS)
-	for i := 0; i < b.N; i++ {
-		protocols.Supports(HTTP)
-		protocols.Supports(SOCKS4)
-	}
+	f.Fuzz(func(t *testing.T, data string) {
+		p := ParseProtocol(data)
+		doubleP := ParseProtocol(p.String())
+		assert.True(t, p == doubleP)
+	})
 }

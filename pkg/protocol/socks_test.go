@@ -15,24 +15,24 @@ func TestSOCKS4Prober_Probe(t *testing.T) {
 	assert := assert.New(t)
 	prober := newSOCKS4Prober()
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
-	protocols, err := prober.Probe(ctx, "220.95.248.56:1080")
+	protocol, err := prober.Probe(ctx, "220.95.248.56:1080")
 	assert.Nil(err)
-	assert.Equal(NewProtocols(SOCKS4), protocols)
+	assert.Equal(SOCKS4, protocol)
 
-	protocols, err = prober.Probe(ctx, "142.54.228.193:4145")
+	protocol, err = prober.Probe(ctx, "142.54.228.193:4145")
 	assert.NotNil(err)
-	assert.Equal(NothingProtocols, protocols)
+	assert.Equal(Nothing, protocol)
 }
 
 func TestSocks5Prober_Probe(t *testing.T) {
 	assert := assert.New(t)
 	prober := newSOCKS5Prober()
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
-	protocols, err := prober.Probe(ctx, "220.95.248.56:1080")
+	protocol, err := prober.Probe(ctx, "220.95.248.56:1080")
 	assert.Nil(err)
-	assert.Equal(NewProtocols(SOCKS5), protocols)
+	assert.Equal(SOCKS5, protocol)
 
-	protocols, err = prober.Probe(ctx, "142.54.228.193:4145")
+	protocol, err = prober.Probe(ctx, "142.54.228.193:4145")
 	assert.NotNil(err)
-	assert.Equal(NothingProtocols, protocols)
+	assert.Equal(Nothing, protocol)
 }

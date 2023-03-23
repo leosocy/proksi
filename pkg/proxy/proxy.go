@@ -6,9 +6,9 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/netip"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,7 +29,7 @@ const MaximumScore int8 = 100
 // Proxy describes a domain object.
 type Proxy struct {
 	AddrPort    netip.AddrPort
-	Protocols   protocol.Protocols
+	Protocol    protocol.Protocol
 	Traffic     traffic.Traffics
 	Anonymity   Anonymity
 	Quality     quality.Quality
@@ -81,16 +81,22 @@ func (p *Proxy) AddScore(delta int8) {
 	p.CheckedAt = time.Now()
 }
 
+// IsValid checks if the proxy's AddrPort and Protocol fields are valid.
+// Returns true if both fields are valid, false otherwise.
 func (p *Proxy) IsValid() bool {
-	return p.AddrPort.IsValid() && p.Protocols.IsValid()
+	return p.AddrPort.IsValid() && p.Protocol.IsValid()
 }
 
-// URL returns string like `ip:port`
-func (p *Proxy) URL() string {
-	if len(p.IP) == 0 || p.Port == 0 {
-		return ""
+// URL returns the URL representation of the proxy, if it's valid.
+// Otherwise, it returns an empty URL.
+func (p *Proxy) URL() *url.URL {
+	if !p.IsValid() {
+		return &url.URL{}
 	}
-	return fmt.Sprintf("http://%s:%d", p.IP.String(), p.Port)
+	return &url.URL{
+		Scheme: p.Protocol.String(),
+		Host:   p.AddrPort.String(),
+	}
 }
 
 func (p *Proxy) String() string {
@@ -112,7 +118,7 @@ type Builder struct {
 
 func NewBuilder() *Builder {
 	proxy := &Proxy{
-		Protocols: protocol.NothingProtocols,
+		Protocol:  protocol.Nothing,
 		Anonymity: AnonymityUnknown,
 		CreatedAt: time.Now(),
 	}
@@ -151,13 +157,18 @@ func (b *Builder) AddrPort(s string) *Builder {
 	return b
 }
 
-func (b *Builder) Protocols(protocols protocol.Protocols) *Builder {
-	b.proxy.Protocols = protocols
+func (b *Builder) Protocol(proto protocol.Protocol) *Builder {
+	b.proxy.Protocol = proto
 	return b
 }
 
 func (b *Builder) Anonymity(anonymity Anonymity) *Builder {
 	b.proxy.Anonymity = anonymity
+	return b
+}
+
+func (b *Builder) AnonymityString(s string) *Builder {
+	b.proxy.Anonymity = ParseAnonymity(s)
 	return b
 }
 

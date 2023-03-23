@@ -56,13 +56,13 @@ func (p *httpProber) doProber(ctx context.Context, addr string) error {
 	return err
 }
 
-func (p *httpProber) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *httpProber) Probe(ctx context.Context, addr string) (Protocol, error) {
 	if err := p.doProber(ctx, addr); err != nil {
 		p.logger.Debug().Err(err).Str("addr", addr).Msg("")
-		return NothingProtocols, err
+		return Nothing, err
 	}
 	p.logger.Debug().Str("addr", addr).Msg("success")
-	return NewProtocols(HTTP), nil
+	return HTTP, nil
 }
 
 type httpsProber struct {
@@ -91,11 +91,11 @@ func (p *httpsProber) doProbe(ctx context.Context, addr string) error {
 	return err
 }
 
-func (p *httpsProber) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *httpsProber) Probe(ctx context.Context, addr string) (Protocol, error) {
 	if err := p.doProbe(ctx, addr); err != nil {
 		p.logger.Debug().Err(err).Str("addr", addr).Msg("")
-		return NothingProtocols, err
+		return Nothing, err
 	}
 	p.logger.Debug().Str("addr", addr).Msg("success")
-	return NewProtocols(HTTPS), nil
+	return HTTPS, nil
 }

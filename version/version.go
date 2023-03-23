@@ -14,6 +14,8 @@ const Version = "0.2.0"
 // BuildDate describes the datetime when was compiled.
 var BuildDate = ""
 
+// GoVersion describes the version of Go that was used to compile the program.
 var GoVersion = runtime.Version()
 
-var OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+// OsArch describes the operating system and architecture that the program is running on.
+var OsArch = fmt.Sprintf("%s / %s", runtime.GOOS, runtime.GOARCH)

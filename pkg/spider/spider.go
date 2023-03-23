@@ -179,7 +179,7 @@ func NewSpider(config *Config) (*Spider, error) {
 	}); err != nil {
 		return nil, err
 	}
-	pc := proxy.LogCollector{}
+	pc := proxy.NewLogCollector()
 
 	s := &Spider{
 		config:    config,

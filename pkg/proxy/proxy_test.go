@@ -59,6 +59,12 @@ func TestBuilder(t *testing.T) {
 	}
 }
 
+func BenchmarkNewBuilder(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NewBuilder().AddrPort("127.0.0.1:8080").Build()
+	}
+}
+
 func TestProxy_Equal(t *testing.T) {
 	assert := assert.New(t)
 	one, _ := NewBuilder().AddrPort("1.2.3.4:80").Build()

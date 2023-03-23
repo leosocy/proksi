@@ -10,7 +10,6 @@ import (
 )
 
 // Protocol represents the type of protocol that a proxy supports.
-// A proxy can support multiple protocols, but in most cases only one protocol is supported.
 //
 // Additionally, a Proxy's protocol can support different types of traffic.Traffic.
 // For example, a Proxy with HTTP protocol can support both traffic.HTTP and traffic.HTTPS traffic,
@@ -31,6 +30,7 @@ const (
 	// and establish a TCP connection. After that, the encrypted data of the client will be forwarded to the server,
 	// and the encrypted data of the server will also be forwarded to the client.
 	// The proxy does not know the plaintext of the encrypted data.
+	// But some HTTP proxy will return 400 when CONNECT.
 	HTTP Protocol = 1 << 0
 
 	// HTTPS means the client communicates with the proxy through the HTTPS protocol,
@@ -54,6 +54,10 @@ const (
 	// Nothing means the protocol is unknown.
 	Nothing Protocol = 0
 )
+
+func (proto Protocol) IsValid() bool {
+	return (proto & 0x0f) != 0
+}
 
 // String returns a string representation of Protocol
 func (proto Protocol) String() string {
@@ -88,52 +92,10 @@ func ParseProtocol(s string) Protocol {
 	}
 }
 
-// Protocols represents a list of protocols by bitwise.
-type Protocols uint8
-
-const (
-	NothingProtocols Protocols = 0
-)
-
-// Supports returns whether the protocol is supported
-func (protos Protocols) Supports(proto Protocol) bool {
-	return (uint8(protos) & uint8(proto)) != 0
-}
-
-func (protos Protocols) Combine(other Protocols) Protocols {
-	return protos | other
-}
-
-func (protos Protocols) IsValid() bool {
-	return uint8(protos) >= uint8(HTTP)
-}
-
-func (protos Protocols) String() string {
-	names := make([]string, 0, 2)
-	for i := 0; i < 8; i++ {
-		if (1<<i)&protos != 0 {
-			names = append(names, Protocol(1<<i).String())
-		}
-	}
-
-	return strings.Join(names, ",")
-}
-
-// NewProtocols receives one or more Protocol and
-// returns a new Protocols with all the Protocol combined.
-func NewProtocols(protos ...Protocol) Protocols {
-	var v uint8
-	for _, proto := range protos {
-		v |= uint8(proto)
-	}
-
-	return Protocols(v)
-}
-
-// Prober is an interface for detecting which protocols a proxy server supports.
+// Prober is an interface for detecting which protocol a proxy server supports.
 type Prober interface {
-	// Probe returns the protocols supported by the proxy.
-	// If no protocols are supported, return NothingProtocols and an error represents why not support.
+	// Probe returns the protocol supported by the proxy.
+	// If no protocol are supported, return Nothing and an error represents why not support.
 	// The addr parameter should be in the format "host:port", for example "1.2.3.4:1080", "proksi.io:1080"
-	Probe(ctx context.Context, addr string) (Protocols, error)
+	Probe(ctx context.Context, addr string) (Protocol, error)
 }

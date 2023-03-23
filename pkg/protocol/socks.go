@@ -127,17 +127,16 @@ func (p *socks4Prober) doProbe(ctx context.Context, addr string) error {
 	if err != nil {
 		return err
 	}
-	err = p.parseConnectReply(resp)
-	return nil
+	return p.parseConnectReply(resp)
 }
 
-func (p *socks4Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *socks4Prober) Probe(ctx context.Context, addr string) (Protocol, error) {
 	if err := p.doProbe(ctx, addr); err != nil {
 		p.logger.Debug().Str("addr", addr).Err(err).Msg("")
-		return NothingProtocols, err
+		return Nothing, err
 	}
 	p.logger.Debug().Str("addr", addr).Msg("success")
-	return NewProtocols(SOCKS4), nil
+	return SOCKS4, nil
 }
 
 type socks5Prober struct {
@@ -258,15 +257,14 @@ func (p *socks5Prober) doProbe(ctx context.Context, addr string) error {
 	if err != nil {
 		return err
 	}
-	err = p.parseConnectReply(resp)
-	return err
+	return p.parseConnectReply(resp)
 }
 
-func (p *socks5Prober) Probe(ctx context.Context, addr string) (Protocols, error) {
+func (p *socks5Prober) Probe(ctx context.Context, addr string) (Protocol, error) {
 	if err := p.doProbe(ctx, addr); err != nil {
 		p.logger.Debug().Str("addr", addr).Err(err).Msg("")
-		return NothingProtocols, err
+		return Nothing, err
 	}
 	p.logger.Debug().Str("addr", addr).Msg("success")
-	return NewProtocols(SOCKS5), nil
+	return SOCKS4, nil
 }

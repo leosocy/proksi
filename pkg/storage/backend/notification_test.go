@@ -23,7 +23,7 @@ func TestInsertionWatcher(t *testing.T) {
 	}, storage.FilterUptime(80))
 	nb.Attach(watcher)
 
-	pxy, _ := proxy.NewProxy("1.2.3.4", "80")
+	pxy, _ := proxy.NewBuilder().AddrPort("1.2.3.4:80").Build()
 	// insert a new proxy pass filters
 	nb.Insert(pxy)
 	// update a exists proxy
@@ -31,7 +31,7 @@ func TestInsertionWatcher(t *testing.T) {
 	pxy.Score = 80
 	nb.InsertOrUpdate(pxy)
 	// insert or update new proxy not pass filters
-	anotherPxy, _ := proxy.NewProxy("5.6.7.8", "80")
+	anotherPxy, _ := proxy.NewBuilder().AddrPort("5.6.7.8:80").Build()
 	anotherPxy.AddScore(-50)
 	nb.InsertOrUpdate(anotherPxy)
 	// delete a proxy

@@ -11,15 +11,15 @@ import (
 	"time"
 )
 
-func TestCombinedProber_Probe(t *testing.T) {
+func TestCompositeProber_Probe(t *testing.T) {
 	assert := assert.New(t)
 	prober := newCombinedProber()
 	ctx, _ := context.WithTimeout(context.Background(), 7*time.Second)
-	protocols, err := prober.Probe(ctx, "220.95.248.56:1080")
+	protocol, err := prober.Probe(ctx, "112.54.47.55:9091")
 	assert.Nil(err)
-	assert.Equal(NewProtocols(SOCKS5, SOCKS4), protocols)
+	assert.Equal(HTTP, protocol)
 
-	protocols, err = prober.Probe(ctx, "142.54.228.193:6666")
-	assert.Nil(err)
-	assert.Equal(NothingProtocols, protocols)
+	protocol, err = prober.Probe(ctx, "142.54.228.193:6666")
+	assert.NotNil(err)
+	assert.Equal(Nothing, protocol)
 }

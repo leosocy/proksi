@@ -47,9 +47,9 @@ func TestHTTPProber_Probe(t *testing.T) {
 	serveFakeHTTPProxy(t, ln)
 
 	prober := newHTTPProber()
-	protocols, err := prober.Probe(context.Background(), ln.Addr().String())
+	protocol, err := prober.Probe(context.Background(), ln.Addr().String())
 	assert.Nil(err)
-	assert.Equal(NewProtocols(HTTP), protocols)
+	assert.Equal(HTTP, protocol)
 
 	// test probing a non-working proxy
 	ln.Close()
@@ -92,9 +92,9 @@ func TestHTTPSProber_Probe(t *testing.T) {
 	serveFakeHTTPProxy(t, ln)
 
 	prober := newHTTPSProber()
-	protocols, err := prober.Probe(context.Background(), ln.Addr().String())
+	protocol, err := prober.Probe(context.Background(), ln.Addr().String())
 	assert.Nil(err)
-	assert.Equal(NewProtocols(HTTPS), protocols)
+	assert.Equal(HTTPS, protocol)
 
 	// test probing a non-working proxy
 	ln.Close()
