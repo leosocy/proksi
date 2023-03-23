@@ -14,6 +14,44 @@ import (
 	"testing"
 )
 
+func TestNewXPathParser(t *testing.T) {
+	invalidXpathConfig := &XpathParserConfig{}
+	invalidXpathConfig.Selector.Base = "//div[@class='invalidXpath'}"
+	validXpathConfig := &XpathParserConfig{}
+	validXpathConfig.Selector.Base = "//div[@class='validXpath']"
+
+	type args struct {
+		name   string
+		config *XpathParserConfig
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "InvalidXpath",
+			args:    args{name: "test", config: invalidXpathConfig},
+			wantErr: true,
+		},
+		{
+			name:    "ValidXpath",
+			args:    args{name: "test", config: validXpathConfig},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := newXpathParser(tt.args.name, tt.args.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("newXpathParser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+		})
+	}
+}
+
 func TestNewRegexParser(t *testing.T) {
 	type args struct {
 		name   string
